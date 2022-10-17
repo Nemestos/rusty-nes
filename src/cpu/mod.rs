@@ -49,6 +49,16 @@ trait Mem {
     }
 }
 
+trait OpCodes {
+    fn adc(&mut self, mode: &AddressingMode);
+    fn and(&mut self, mode: &AddressingMode);
+    fn lda(&mut self, mode: &AddressingMode);
+    fn sbc(&mut self, mode: &AddressingMode);
+    fn sta(&mut self, mode: &AddressingMode);
+    fn tax(&mut self);
+    fn inx(&mut self);
+}
+
 impl Mem for CPU {
     fn mem_read(&self, addr: u16) -> u8 {
         self.memory[addr as usize]
@@ -56,6 +66,47 @@ impl Mem for CPU {
 
     fn mem_write(&mut self, addr: u16, data: u8) {
         self.memory[addr as usize] = data;
+    }
+}
+
+impl OpCodes for CPU {
+    fn adc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        self.add_to_register_a(data);
+    }
+    fn and(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        self.set_register_a(data & self.register_a);
+    }
+    fn lda(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let value = self.mem_read(addr);
+
+        self.register_a = value;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    fn sbc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(&mode);
+        let data = self.mem_read(addr);
+        self.add_to_register_a(((data as i8).wrapping_neg()) as u8);
+    }
+
+    fn sta(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        self.mem_write(addr, self.register_a);
+    }
+
+    fn tax(&mut self) {
+        self.register_x = self.register_a;
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+
+    fn inx(&mut self) {
+        self.register_x = self.register_x.wrapping_add(1);
+        self.update_zero_and_negative_flags(self.register_x);
     }
 }
 
@@ -102,6 +153,7 @@ impl CPU {
     fn add_to_register_a(&mut self, data: u8) {
         let is_carry = self.status.contains(CpuFlags::CARRY);
         let sum = self.register_a as u16 + data as u16 + is_carry as u16;
+        println!("{:?}", data);
 
         //when an another overflow on 2 bytes
         let carry = sum > 0xff;
@@ -121,37 +173,7 @@ impl CPU {
         }
         self.set_register_a(result);
     }
-    fn adc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-        self.add_to_register_a(data);
-    }
-    fn and(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-        self.set_register_a(data & self.register_a);
-    }
-    fn lda(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let value = self.mem_read(addr);
 
-        self.register_a = value;
-        self.update_zero_and_negative_flags(self.register_a);
-    }
-    fn sta(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        self.mem_write(addr, self.register_a);
-    }
-
-    fn tax(&mut self) {
-        self.register_x = self.register_a;
-        self.update_zero_and_negative_flags(self.register_x);
-    }
-
-    fn inx(&mut self) {
-        self.register_x = self.register_x.wrapping_add(1);
-        self.update_zero_and_negative_flags(self.register_x);
-    }
     fn get_operand_address(&self, mode: &AddressingMode) -> u16 {
         match mode {
             AddressingMode::Immediate => self.program_counter,
@@ -232,6 +254,10 @@ impl CPU {
                 /*LDA */
                 0xa9 | 0xa5 | 0xb5 | 0xad | 0xbd | 0xb9 | 0xa1 | 0xb1 => {
                     self.lda(&opcode.mode);
+                }
+                /* SBC */
+                0xe9 | 0xe5 | 0xf5 | 0xed | 0xfd | 0xf9 | 0xe1 | 0xf1 => {
+                    self.sbc(&opcode.mode);
                 }
 
                 /* STA */
@@ -384,4 +410,31 @@ mod test {
         cpu.load_and_run(vec![0xa9, 0xd0, 0x69, 0x90, 0x00]);
         assert!(cpu.status.contains(CpuFlags::OVERFLOW))
     }
+
+    #[test]
+    fn test_sbc() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xa9, 0x50, 0xe9, 0x30, 0x00]);
+        println!("{:?}", cpu.register_a);
+        assert_eq!(cpu.register_a, 0x20);
+    }
+    #[test]
+    fn test_sbc_carry() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xa9, 0xff, 0x69, 0x02, 0xe9, 0x01, 0x00]);
+        assert!(cpu.status.contains(CpuFlags::CARRY));
+    }
+    // #[test]
+    // fn test_adc_overflow_two_positiv() {
+    //     let mut cpu = CPU::new();
+    //     cpu.load_and_run(vec![0xa9, 0x50, 0x69, 0x50, 0x00]);
+    //     assert!(cpu.status.contains(CpuFlags::OVERFLOW))
+    // }
+
+    // #[test]
+    // fn test_adc_overflow_two_negativ() {
+    //     let mut cpu = CPU::new();
+    //     cpu.load_and_run(vec![0xa9, 0xd0, 0x69, 0x90, 0x00]);
+    //     assert!(cpu.status.contains(CpuFlags::OVERFLOW))
+    // }
 }
