@@ -52,6 +52,20 @@ trait Mem {
 trait OpCodes {
     fn adc(&mut self, mode: &AddressingMode);
     fn and(&mut self, mode: &AddressingMode);
+    fn asl_acu(&mut self);
+    fn asl(&mut self, mode: &AddressingMode) -> u8;
+
+    /*BRANCHING */
+    fn bcc(&mut self);
+    fn bcs(&mut self);
+    fn beq(&mut self);
+    fn bne(&mut self);
+    fn bmi(&mut self);
+    fn bpl(&mut self);
+    fn bvc(&mut self);
+    fn bvs(&mut self);
+    /*END BRANCHING */
+
     fn lda(&mut self, mode: &AddressingMode);
     fn sbc(&mut self, mode: &AddressingMode);
     fn sta(&mut self, mode: &AddressingMode);
@@ -80,6 +94,60 @@ impl OpCodes for CPU {
         let data = self.mem_read(addr);
         self.set_register_a(data & self.register_a);
     }
+    fn asl_acu(&mut self) {
+        let mut data = self.register_a;
+
+        // if bit 7 is set
+        if data >> 7 == 1 {
+            self.set_carry();
+        } else {
+            self.remove_carry()
+        }
+        data = data << 1;
+        self.set_register_a(data);
+    }
+    fn asl(&mut self, mode: &AddressingMode) -> u8 {
+        let addr = self.get_operand_address(mode);
+        let mut data = self.mem_read(addr);
+
+        // if bit 7 is set
+        if data >> 7 == 1 {
+            self.set_carry();
+        } else {
+            self.remove_carry()
+        }
+        data = data << 1;
+        self.mem_write(addr, data);
+        self.update_zero_and_negative_flags(data);
+        data
+    }
+    /*BRANCHING */
+    fn bcc(&mut self) {
+        self.branch_handle(!self.status.contains(CpuFlags::CARRY));
+    }
+    fn bcs(&mut self) {
+        self.branch_handle(self.status.contains(CpuFlags::CARRY));
+    }
+    fn beq(&mut self) {
+        self.branch_handle(self.status.contains(CpuFlags::ZERO));
+    }
+    fn bne(&mut self) {
+        self.branch_handle(!self.status.contains(CpuFlags::ZERO));
+    }
+    fn bmi(&mut self) {
+        self.branch_handle(self.status.contains(CpuFlags::NEGATIV));
+    }
+    fn bpl(&mut self) {
+        self.branch_handle(!self.status.contains(CpuFlags::NEGATIV));
+    }
+    fn bvc(&mut self) {
+        self.branch_handle(!self.status.contains(CpuFlags::OVERFLOW));
+    }
+    fn bvs(&mut self) {
+        self.branch_handle(self.status.contains(CpuFlags::OVERFLOW));
+    }
+    /*END BRANCHING */
+
     fn lda(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(mode);
         let value = self.mem_read(addr);
@@ -173,7 +241,22 @@ impl CPU {
         }
         self.set_register_a(result);
     }
-
+    fn set_carry(&mut self) {
+        self.status.insert(CpuFlags::CARRY);
+    }
+    fn remove_carry(&mut self) {
+        self.status.remove(CpuFlags::CARRY);
+    }
+    fn branch_handle(&mut self, invariant: bool) {
+        if invariant {
+            let jump: i8 = self.mem_read(self.program_counter) as i8;
+            let jump_addr = self
+                .program_counter
+                .wrapping_add(1)
+                .wrapping_add(jump as u16);
+            self.program_counter = jump_addr;
+        }
+    }
     fn get_operand_address(&self, mode: &AddressingMode) -> u16 {
         match mode {
             AddressingMode::Immediate => self.program_counter,
@@ -251,6 +334,13 @@ impl CPU {
                 0x29 | 0x25 | 0x35 | 0x2d | 0x3d | 0x39 | 0x21 | 0x31 => {
                     self.and(&opcode.mode);
                 }
+                /*ASL*/ 0x0a => self.asl_acu(),
+
+                /* ASL */
+                0x06 | 0x16 | 0x0e | 0x1e => {
+                    self.asl(&opcode.mode);
+                }
+
                 /*LDA */
                 0xa9 | 0xa5 | 0xb5 | 0xad | 0xbd | 0xb9 | 0xa1 | 0xb1 => {
                     self.lda(&opcode.mode);
@@ -267,6 +357,18 @@ impl CPU {
 
                 0xAA => self.tax(),
                 0xe8 => self.inx(),
+
+                /*BRANCHING */
+                0x90 => self.bcc(),
+                0xb0 => self.bcs(),
+                0xf0 => self.beq(),
+                0xd0 => self.bne(),
+                0x30 => self.bmi(),
+                0x10 => self.bpl(),
+                0x50 => self.bvc(),
+                0x70 => self.bvs(),
+
+                /*END BRANCHING */
                 0x00 => return,
                 _ => todo!(),
             }
@@ -285,6 +387,10 @@ impl CPU {
     pub fn load_and_run(&mut self, program: Vec<u8>) {
         self.load(program);
         self.reset();
+        self.run();
+    }
+    pub fn load_and_hard_run(&mut self, program: Vec<u8>) {
+        self.load(program);
         self.run();
     }
 }
@@ -424,17 +530,11 @@ mod test {
         cpu.load_and_run(vec![0xa9, 0xff, 0x69, 0x02, 0xe9, 0x01, 0x00]);
         assert!(cpu.status.contains(CpuFlags::CARRY));
     }
-    // #[test]
-    // fn test_adc_overflow_two_positiv() {
-    //     let mut cpu = CPU::new();
-    //     cpu.load_and_run(vec![0xa9, 0x50, 0x69, 0x50, 0x00]);
-    //     assert!(cpu.status.contains(CpuFlags::OVERFLOW))
-    // }
 
-    // #[test]
-    // fn test_adc_overflow_two_negativ() {
-    //     let mut cpu = CPU::new();
-    //     cpu.load_and_run(vec![0xa9, 0xd0, 0x69, 0x90, 0x00]);
-    //     assert!(cpu.status.contains(CpuFlags::OVERFLOW))
-    // }
+    #[test]
+    fn test_asl_acu() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xa9, 0x50, 0x0A, 0x00]);
+        assert_eq!(cpu.register_a, 0x50 << 1);
+    }
 }
