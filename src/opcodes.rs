@@ -24,6 +24,8 @@ impl OpCode {
 lazy_static! {
     pub static ref CPU_OPS_CODES: Vec<OpCode> = vec![
 
+        /* Arithmetic & logic */
+
         OpCode::new(0x69,"ADC",2,2,AddressingMode::Immediate),
         OpCode::new(0x65,"ADC",2,3,AddressingMode::ZeroPage),
         OpCode::new(0x75,"ADC",2,4,AddressingMode::ZeroPage_X),
@@ -48,8 +50,28 @@ lazy_static! {
         OpCode::new(0x0E,"ASL",3,6,AddressingMode::Absolute),
         OpCode::new(0x1E,"ASL",3,7,AddressingMode::Absolute_X),
 
+        OpCode::new(0x24,"BIT",2,3,AddressingMode::ZeroPage),
+        OpCode::new(0x2C,"BIT",2,3,AddressingMode::Absolute),
 
+        OpCode::new(0xe9,"SBC",2,2,AddressingMode::Immediate),
+        OpCode::new(0xe5,"SBC",2,3,AddressingMode::ZeroPage),
+        OpCode::new(0xf5,"SBC",2,4,AddressingMode::ZeroPage_X),
+        OpCode::new(0xed,"SBC",3,4,AddressingMode::Absolute),
+        OpCode::new(0xfd,"SBC",3,4,AddressingMode::Absolute_X),
+        OpCode::new(0xf9,"SBC",3,4,AddressingMode::Absolute_Y),
+        OpCode::new(0xe1,"SBC",2,6,AddressingMode::Indirect_X),
+        OpCode::new(0xf1,"SBC",2,5,AddressingMode::Indirect_Y),
+
+        /* End Arithmetic & logic */
+
+
+
+        /*Interupts */
         OpCode::new(0x00, "BRK", 1, 7, AddressingMode::NoneAddressing),
+
+        /*End Interupts */
+
+        /*A,X,Y Registers */
         OpCode::new(0xaa, "TAX", 1, 2, AddressingMode::NoneAddressing),
         OpCode::new(0xe8, "INX", 1, 2, AddressingMode::NoneAddressing),
 
@@ -62,14 +84,7 @@ lazy_static! {
         OpCode::new(0xa1, "LDA", 2, 6, AddressingMode::Indirect_X),
         OpCode::new(0xb1, "LDA", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y),
 
-        OpCode::new(0xe9,"SBC",2,2,AddressingMode::Immediate),
-        OpCode::new(0xe5,"SBC",2,3,AddressingMode::ZeroPage),
-        OpCode::new(0xf5,"SBC",2,4,AddressingMode::ZeroPage_X),
-        OpCode::new(0xed,"SBC",3,4,AddressingMode::Absolute),
-        OpCode::new(0xfd,"SBC",3,4,AddressingMode::Absolute_X),
-        OpCode::new(0xf9,"SBC",3,4,AddressingMode::Absolute_Y),
-        OpCode::new(0xe1,"SBC",2,6,AddressingMode::Indirect_X),
-        OpCode::new(0xf1,"SBC",2,5,AddressingMode::Indirect_Y),
+
 
         OpCode::new(0x85, "STA", 2, 3, AddressingMode::ZeroPage),
         OpCode::new(0x95, "STA", 2, 4, AddressingMode::ZeroPage_X),
@@ -79,7 +94,10 @@ lazy_static! {
         OpCode::new(0x81, "STA", 2, 6, AddressingMode::Indirect_X),
         OpCode::new(0x91, "STA", 2, 6, AddressingMode::Indirect_Y),
 
-        /* Branching */
+        /*End A,X,Y Registers */
+
+
+        /* Control flow */
         OpCode::new(0x90, "BCC", 2, 2, AddressingMode::NoneAddressing),
         OpCode::new(0xB0, "BCS", 2, 2, AddressingMode::NoneAddressing),
         OpCode::new(0xF0, "BEQ", 2, 2, AddressingMode::NoneAddressing),
@@ -88,8 +106,16 @@ lazy_static! {
         OpCode::new(0x10, "BPL", 2, 2, AddressingMode::NoneAddressing),
         OpCode::new(0x50, "BVC", 2, 2, AddressingMode::NoneAddressing),
         OpCode::new(0x70, "BVS", 2, 2, AddressingMode::NoneAddressing),
+        /* End Control flow */
 
-
+        /*Status register */
+        OpCode::new(0x18, "CLC", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xD8, "CLD", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x58, "CLI", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xB8, "CLV", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x38, "SEC", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xF8, "SED", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x78, "SEI", 1, 2, AddressingMode::NoneAddressing),
 
 
     ];

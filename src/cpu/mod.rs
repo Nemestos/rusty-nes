@@ -1,5 +1,5 @@
 use crate::opcodes;
-use std::{collections::HashMap, ops::Add};
+use std::collections::HashMap;
 
 bitflags! {
 
@@ -55,7 +55,9 @@ trait OpCodes {
     fn asl_acu(&mut self);
     fn asl(&mut self, mode: &AddressingMode) -> u8;
 
-    /*BRANCHING */
+    fn bit(&mut self, mode: &AddressingMode);
+
+    /*Control Flow */
     fn bcc(&mut self);
     fn bcs(&mut self);
     fn beq(&mut self);
@@ -64,13 +66,23 @@ trait OpCodes {
     fn bpl(&mut self);
     fn bvc(&mut self);
     fn bvs(&mut self);
-    /*END BRANCHING */
+    /*END Control Flow */
 
     fn lda(&mut self, mode: &AddressingMode);
     fn sbc(&mut self, mode: &AddressingMode);
     fn sta(&mut self, mode: &AddressingMode);
     fn tax(&mut self);
     fn inx(&mut self);
+
+    /*Status register */
+    fn clc(&mut self);
+    fn cld(&mut self);
+    fn cli(&mut self);
+    fn clv(&mut self);
+    fn sec(&mut self);
+    fn sed(&mut self);
+    fn sei(&mut self);
+    /*End Status register */
 }
 
 impl Mem for CPU {
@@ -121,7 +133,17 @@ impl OpCodes for CPU {
         self.update_zero_and_negative_flags(data);
         data
     }
-    /*BRANCHING */
+    fn bit(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+
+        let and = self.register_a & data;
+        self.status.set(CpuFlags::ZERO, and == 0);
+        println!("{:?}", data);
+        self.status.set(CpuFlags::NEGATIV, data & 0b1000_0000 > 0);
+        self.status.set(CpuFlags::OVERFLOW, data & 0b0100_0000 > 0);
+    }
+    /*Control Flow */
     fn bcc(&mut self) {
         self.branch_handle(!self.status.contains(CpuFlags::CARRY));
     }
@@ -146,7 +168,7 @@ impl OpCodes for CPU {
     fn bvs(&mut self) {
         self.branch_handle(self.status.contains(CpuFlags::OVERFLOW));
     }
-    /*END BRANCHING */
+    /*END Control Flow */
 
     fn lda(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(mode);
@@ -176,6 +198,31 @@ impl OpCodes for CPU {
         self.register_x = self.register_x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.register_x);
     }
+
+    /*Status register */
+    fn clc(&mut self) {
+        self.status.remove(CpuFlags::CARRY);
+    }
+    fn cld(&mut self) {
+        self.status.remove(CpuFlags::DECIMAL_MODE);
+    }
+    fn cli(&mut self) {
+        self.status.remove(CpuFlags::INTERRUPT_DISABLE);
+    }
+    fn clv(&mut self) {
+        self.status.remove(CpuFlags::OVERFLOW);
+    }
+
+    fn sec(&mut self) {
+        self.status.insert(CpuFlags::CARRY);
+    }
+    fn sed(&mut self) {
+        self.status.insert(CpuFlags::DECIMAL_MODE);
+    }
+    fn sei(&mut self) {
+        self.status.insert(CpuFlags::INTERRUPT_DISABLE);
+    }
+    /*End Status register */
 }
 
 pub struct CPU {
@@ -326,6 +373,8 @@ impl CPU {
                 .expect(&format!("OpCode {:x} is not recognized", code));
 
             match code {
+                /* Arithmetic & Logic */
+
                 /*ADC */
                 0x69 | 0x65 | 0x75 | 0x6d | 0x7d | 0x79 | 0x61 | 0x71 => {
                     self.adc(&opcode.mode);
@@ -340,14 +389,22 @@ impl CPU {
                 0x06 | 0x16 | 0x0e | 0x1e => {
                     self.asl(&opcode.mode);
                 }
-
-                /*LDA */
-                0xa9 | 0xa5 | 0xb5 | 0xad | 0xbd | 0xb9 | 0xa1 | 0xb1 => {
-                    self.lda(&opcode.mode);
+                /* BIT */
+                0x24 | 0x2c => {
+                    self.bit(&opcode.mode);
                 }
                 /* SBC */
                 0xe9 | 0xe5 | 0xf5 | 0xed | 0xfd | 0xf9 | 0xe1 | 0xf1 => {
                     self.sbc(&opcode.mode);
+                }
+
+                /* End Arithmetic & Logic */
+
+                /* A,X,Y Registers */
+
+                /*LDA */
+                0xa9 | 0xa5 | 0xb5 | 0xad | 0xbd | 0xb9 | 0xa1 | 0xb1 => {
+                    self.lda(&opcode.mode);
                 }
 
                 /* STA */
@@ -358,7 +415,10 @@ impl CPU {
                 0xAA => self.tax(),
                 0xe8 => self.inx(),
 
-                /*BRANCHING */
+                /*End A,X,Y Registers */
+
+
+                /*Control Flow */
                 0x90 => self.bcc(),
                 0xb0 => self.bcs(),
                 0xf0 => self.beq(),
@@ -368,7 +428,17 @@ impl CPU {
                 0x50 => self.bvc(),
                 0x70 => self.bvs(),
 
-                /*END BRANCHING */
+                /*END Control Flow */
+
+                /*Status Register */
+                0x18 => self.clc(),
+                0xd8 => self.cld(),
+                0x58 => self.cli(),
+                0xb8 => self.clv(),
+                0x38 => self.sec(),
+                0xf8 => self.sed(),
+                0x78 => self.sei(),
+                /*End Status Register */
                 0x00 => return,
                 _ => todo!(),
             }
@@ -387,10 +457,6 @@ impl CPU {
     pub fn load_and_run(&mut self, program: Vec<u8>) {
         self.load(program);
         self.reset();
-        self.run();
-    }
-    pub fn load_and_hard_run(&mut self, program: Vec<u8>) {
-        self.load(program);
         self.run();
     }
 }
@@ -536,5 +602,20 @@ mod test {
         let mut cpu = CPU::new();
         cpu.load_and_run(vec![0xa9, 0x50, 0x0A, 0x00]);
         assert_eq!(cpu.register_a, 0x50 << 1);
+    }
+
+    #[test]
+    fn test_bit() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xa9, 0x50, 0x2c, 0x00, 0x00]);
+        assert!(cpu.status.contains(CpuFlags::ZERO));
+
+        cpu.mem_write(0x10, 0b1000_0000);
+        cpu.load_and_run(vec![0xa9, 0b1111_1111, 0x2c, 0x10, 0x00]);
+        assert!(cpu.status.contains(CpuFlags::NEGATIV));
+
+        cpu.mem_write(0x10, 0b0100_0000);
+        cpu.load_and_run(vec![0xa9, 0b1111_1111, 0x2c, 0x10, 0x00]);
+        assert!(cpu.status.contains(CpuFlags::OVERFLOW))
     }
 }
