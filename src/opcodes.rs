@@ -58,11 +58,23 @@ lazy_static! {
         OpCode::new(0xD5,"CMP",2,4,AddressingMode::ZeroPage_X),
         OpCode::new(0xCD,"CMP",3,4,AddressingMode::Absolute),
         OpCode::new(0xDD,"CMP",3,4,AddressingMode::Absolute_X),
-        OpCode::new(0xC9,"CMP",2,2,AddressingMode::Absolute_Y),
+        OpCode::new(0xC9,"CMP",3,4,AddressingMode::Absolute_Y),
         OpCode::new(0xC1,"CMP",2,6,AddressingMode::Indirect_X),
         OpCode::new(0xD1,"CMP",2,5,AddressingMode::Indirect_Y),
 
+        OpCode::new(0xC6,"DEC",2,5,AddressingMode::ZeroPage),
+        OpCode::new(0xD6,"DEC",2,6,AddressingMode::ZeroPage_X),
+        OpCode::new(0xCE,"DEC",3,6,AddressingMode::Absolute),
+        OpCode::new(0xDE,"DEC",3,7,AddressingMode::Absolute_X),
 
+        OpCode::new(0x49,"EOR",2,2,AddressingMode::Immediate),
+        OpCode::new(0x45,"EOR",2,3,AddressingMode::ZeroPage),
+        OpCode::new(0x55,"EOR",2,4,AddressingMode::ZeroPage_X),
+        OpCode::new(0x4D,"EOR",3,4,AddressingMode::Absolute),
+        OpCode::new(0x5D,"EOR",3,4,AddressingMode::Absolute_X),
+        OpCode::new(0x59,"EOR",3,4,AddressingMode::Absolute_Y),
+        OpCode::new(0x41,"EOR",2,6,AddressingMode::Indirect_X),
+        OpCode::new(0x51,"EOR",2,5,AddressingMode::Indirect_Y),
 
 
 
@@ -94,8 +106,18 @@ lazy_static! {
         OpCode::new(0xC4,"CPY",2,3,AddressingMode::ZeroPage),
         OpCode::new(0xCC,"CPY",3,4,AddressingMode::Absolute),
 
+        OpCode::new(0xca, "DEX", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x88, "DEY", 1, 2, AddressingMode::NoneAddressing),
+
+
         OpCode::new(0xaa, "TAX", 1, 2, AddressingMode::NoneAddressing),
         OpCode::new(0xe8, "INX", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xc8, "INY", 1, 2, AddressingMode::NoneAddressing),
+
+        OpCode::new(0xe6, "INC", 2, 5, AddressingMode::ZeroPage),
+        OpCode::new(0xf6, "INC", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode::new(0xee, "INC", 3, 6, AddressingMode::Absolute),
+        OpCode::new(0xfe, "INC", 3, 7, AddressingMode::Absolute_X),
 
         OpCode::new(0xa9, "LDA", 2, 2, AddressingMode::Immediate),
         OpCode::new(0xa5, "LDA", 2, 3, AddressingMode::ZeroPage),

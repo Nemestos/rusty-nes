@@ -53,10 +53,12 @@ trait OpCodes {
     /*Arithmetic Logic */
     fn adc(&mut self, mode: &AddressingMode);
     fn and(&mut self, mode: &AddressingMode);
-    fn asl_acu(&mut self);
     fn asl(&mut self, mode: &AddressingMode) -> u8;
-    fn cmp(&mut self, mode: &AddressingMode);
+    fn asl_acu(&mut self);
     fn bit(&mut self, mode: &AddressingMode);
+    fn cmp(&mut self, mode: &AddressingMode);
+    fn dec(&mut self, mode: &AddressingMode);
+    fn eor(&mut self, mode: &AddressingMode);
     fn sbc(&mut self, mode: &AddressingMode);
 
     /*End Arithmetic Logic */
@@ -73,14 +75,21 @@ trait OpCodes {
     /*END Control Flow */
 
     /*A,X,Y Registers */
+
     fn cpx(&mut self, mode: &AddressingMode);
     fn cpy(&mut self, mode: &AddressingMode);
+    fn dex(&mut self);
+    fn dey(&mut self);
+
     fn lda(&mut self, mode: &AddressingMode);
     fn ldx(&mut self, mode: &AddressingMode);
     fn ldy(&mut self, mode: &AddressingMode);
     fn sta(&mut self, mode: &AddressingMode);
     fn tax(&mut self);
+
     fn inx(&mut self);
+    fn iny(&mut self);
+    fn inc(&mut self, mode: &AddressingMode);
     /*End A,X,Y Registers */
 
     /*Status register */
@@ -156,6 +165,20 @@ impl OpCodes for CPU {
     fn cmp(&mut self, mode: &AddressingMode) {
         self.compare_handle(mode, self.register_a);
     }
+    fn dec(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        let result = data.wrapping_sub(1);
+        self.mem_write(addr, result);
+        self.update_zero_and_negative_flags(result);
+    }
+    fn eor(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        let result = self.register_a ^ data;
+        self.register_a = result;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
 
     fn sbc(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(&mode);
@@ -192,6 +215,18 @@ impl OpCodes for CPU {
     /*END Control Flow */
 
     /*A,X,Y Registers */
+
+    fn dex(&mut self) {
+        let result = self.register_x.wrapping_sub(1);
+        self.register_x = result;
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+
+    fn dey(&mut self) {
+        let result = self.register_y.wrapping_sub(1);
+        self.register_y = result;
+        self.update_zero_and_negative_flags(self.register_y);
+    }
     fn lda(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(mode);
         let value = self.mem_read(addr);
@@ -228,6 +263,18 @@ impl OpCodes for CPU {
     fn inx(&mut self) {
         self.register_x = self.register_x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.register_x);
+    }
+    fn iny(&mut self) {
+        self.register_y = self.register_y.wrapping_add(1);
+        self.update_zero_and_negative_flags(self.register_y);
+    }
+
+    fn inc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        let result = data.wrapping_add(1);
+        self.mem_write(addr, result);
+        self.update_zero_and_negative_flags(result);
     }
     fn cpx(&mut self, mode: &AddressingMode) {
         self.compare_handle(mode, self.register_x);
@@ -442,6 +489,14 @@ impl CPU {
                 0xc9 | 0xc5 | 0xd5 | 0xcd | 0xdd | 0xd9 | 0xc1 | 0xd1 => {
                     self.cmp(&opcode.mode);
                 }
+                /*CMP */
+                0xc6 | 0xd6 | 0xce | 0xde => {
+                    self.dec(&opcode.mode);
+                }
+                /*CMP */
+                0x49 | 0x45 | 0x55 | 0x4d | 0x5d | 0x59 | 0x41 | 0x51 => {
+                    self.eor(&opcode.mode);
+                }
 
                 /* SBC */
                 0xe9 | 0xe5 | 0xf5 | 0xed | 0xfd | 0xf9 | 0xe1 | 0xf1 => {
@@ -456,6 +511,12 @@ impl CPU {
                 }
                 0xc0 | 0xc4 | 0xcc => {
                     self.cpy(&opcode.mode);
+                }
+                0xca => {
+                    self.dex();
+                }
+                0x88 => {
+                    self.dey();
                 }
                 0xa9 | 0xa5 | 0xb5 | 0xad | 0xbd | 0xb9 | 0xa1 | 0xb1 => {
                     self.lda(&opcode.mode);
@@ -474,6 +535,8 @@ impl CPU {
 
                 0xAA => self.tax(),
                 0xe8 => self.inx(),
+                0xc8 => self.iny(),
+                0xe6 | 0xf6 | 0xee | 0xFE => self.inc(&opcode.mode),
 
                 /*End A,X,Y Registers */
 
@@ -559,6 +622,13 @@ mod test {
         cpu.load_and_run(vec![0xa9, 0xd0, 0x69, 0x90, 0x00]);
         assert!(cpu.status.contains(CpuFlags::OVERFLOW))
     }
+    #[test]
+    fn test_dec() {
+        let mut cpu = CPU::new();
+        cpu.mem_write(0x10, 0x05);
+        cpu.load_and_run(vec![0xce, 0x10, 0x00]);
+        assert_eq!(cpu.mem_read(0x10), 0x04);
+    }
 
     #[test]
     fn test_sbc() {
@@ -606,6 +676,13 @@ mod test {
         cpu.mem_write(0x10, 0x010);
         cpu.load_and_run(vec![0xa9, 0x10, 0xc9, 0x10, 0x00]);
         assert!(cpu.status.contains(CpuFlags::ZERO));
+    }
+
+    #[test]
+    fn test_eor() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xa9, 0x10, 0x49, 0xff]);
+        assert_eq!(cpu.register_a, 0x10 ^ 0xff);
     }
 
     /*End Arithmethic & logic */
@@ -676,6 +753,19 @@ mod test {
     }
 
     #[test]
+    fn test_dex() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xa2, 0x05, 0xca, 0x00]);
+        assert_eq!(cpu.register_x, 0x04);
+    }
+    #[test]
+    fn test_dey() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xa0, 0x05, 0x88, 0x00]);
+        assert_eq!(cpu.register_y, 0x04);
+    }
+
+    #[test]
     fn test_ldx() {
         let mut cpu = CPU::new();
         cpu.load_and_run(vec![0xa2, 0xff, 0x00]);
@@ -705,14 +795,28 @@ mod test {
 
         assert_eq!(cpu.register_x, 10)
     }
+    #[test]
+    fn test_inc() {
+        let mut cpu = CPU::new();
+        cpu.mem_write(0x10, 0x05);
+        cpu.load_and_run(vec![0xee, 0x10]);
+
+        assert_eq!(cpu.mem_read(0x10), 0x06);
+    }
 
     #[test]
-    fn test_0xe8_increment_x() {
+    fn test_inx() {
         let mut cpu = CPU::new();
-        cpu.register_x = 0x00;
-        cpu.load_and_run(vec![0xe8, 0x00]);
+        cpu.load_and_run(vec![0xa2, 0x05, 0xe8, 0x00]);
 
-        assert_eq!(cpu.register_x, 0x01);
+        assert_eq!(cpu.register_x, 0x06);
+    }
+    #[test]
+    fn test_iny() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xa0, 0x05, 0xc8, 0x00]);
+
+        assert_eq!(cpu.register_y, 0x06);
     }
 
     #[test]
@@ -722,6 +826,7 @@ mod test {
 
         assert_eq!(cpu.register_x, 1)
     }
+
     /*End A,X,Y Registers */
 
     #[test]
