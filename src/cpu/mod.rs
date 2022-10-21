@@ -72,6 +72,10 @@ trait OpCodes {
     fn bpl(&mut self);
     fn bvc(&mut self);
     fn bvs(&mut self);
+
+    fn jmp(&mut self);
+    fn jmp_indirect(&mut self);
+
     /*END Control Flow */
 
     /*A,X,Y Registers */
@@ -215,6 +219,27 @@ impl OpCodes for CPU {
     fn bvs(&mut self) {
         self.branch_handle(self.status.contains(CpuFlags::OVERFLOW));
     }
+    fn jmp(&mut self) {
+        let addr = self.mem_read_u16(self.program_counter);
+        self.program_counter = addr;
+    }
+
+    fn jmp_indirect(&mut self) {
+        let mem_address = self.mem_read_u16(self.program_counter);
+
+        //bug on 6502 when fetch on a page boundary so just fetch lsb from 0xxff but msb from 0xx00
+
+        let indirect_ref = if mem_address & 0x00FF == 0x00FF {
+            let lo = self.mem_read(mem_address);
+            let hi = self.mem_read(mem_address & 0xFF00);
+            (hi as u16) << 8 | (lo as u16)
+        } else {
+            self.mem_read_u16(mem_address)
+        };
+
+        self.program_counter = indirect_ref;
+    }
+
     /*END Control Flow */
 
     /*A,X,Y Registers */
@@ -556,6 +581,9 @@ impl CPU {
                 0x10 => self.bpl(),
                 0x50 => self.bvc(),
                 0x70 => self.bvs(),
+
+                0x4c => self.jmp(),
+                0x6c => self.jmp_indirect(),
 
                 /*END Control Flow */
 
