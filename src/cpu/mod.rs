@@ -81,15 +81,18 @@ trait OpCodes {
     fn dex(&mut self);
     fn dey(&mut self);
 
-    fn lda(&mut self, mode: &AddressingMode);
-    fn ldx(&mut self, mode: &AddressingMode);
-    fn ldy(&mut self, mode: &AddressingMode);
-    fn sta(&mut self, mode: &AddressingMode);
-    fn tax(&mut self);
-
     fn inx(&mut self);
     fn iny(&mut self);
     fn inc(&mut self, mode: &AddressingMode);
+
+    fn lda(&mut self, mode: &AddressingMode);
+    fn ldx(&mut self, mode: &AddressingMode);
+    fn ldy(&mut self, mode: &AddressingMode);
+
+    fn sta(&mut self, mode: &AddressingMode);
+
+    fn tax(&mut self);
+
     /*End A,X,Y Registers */
 
     /*Status register */
@@ -216,6 +219,13 @@ impl OpCodes for CPU {
 
     /*A,X,Y Registers */
 
+    fn cpx(&mut self, mode: &AddressingMode) {
+        self.compare_handle(mode, self.register_x);
+    }
+    fn cpy(&mut self, mode: &AddressingMode) {
+        self.compare_handle(mode, self.register_y);
+    }
+
     fn dex(&mut self) {
         let result = self.register_x.wrapping_sub(1);
         self.register_x = result;
@@ -227,6 +237,24 @@ impl OpCodes for CPU {
         self.register_y = result;
         self.update_zero_and_negative_flags(self.register_y);
     }
+
+    fn inx(&mut self) {
+        self.register_x = self.register_x.wrapping_add(1);
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+    fn iny(&mut self) {
+        self.register_y = self.register_y.wrapping_add(1);
+        self.update_zero_and_negative_flags(self.register_y);
+    }
+
+    fn inc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        let result = data.wrapping_add(1);
+        self.mem_write(addr, result);
+        self.update_zero_and_negative_flags(result);
+    }
+
     fn lda(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(mode);
         let value = self.mem_read(addr);
@@ -260,28 +288,6 @@ impl OpCodes for CPU {
         self.update_zero_and_negative_flags(self.register_x);
     }
 
-    fn inx(&mut self) {
-        self.register_x = self.register_x.wrapping_add(1);
-        self.update_zero_and_negative_flags(self.register_x);
-    }
-    fn iny(&mut self) {
-        self.register_y = self.register_y.wrapping_add(1);
-        self.update_zero_and_negative_flags(self.register_y);
-    }
-
-    fn inc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-        let result = data.wrapping_add(1);
-        self.mem_write(addr, result);
-        self.update_zero_and_negative_flags(result);
-    }
-    fn cpx(&mut self, mode: &AddressingMode) {
-        self.compare_handle(mode, self.register_x);
-    }
-    fn cpy(&mut self, mode: &AddressingMode) {
-        self.compare_handle(mode, self.register_y);
-    }
     /*End A,X,Y Registers */
 
     /*Status register */
