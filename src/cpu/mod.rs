@@ -1,18 +1,27 @@
+use crate::cpu::control_flow_ops::ControlOpCodes;
+use crate::cpu::logic_ops::LogicOpCodes;
+use crate::cpu::register_ops::RegisterOpCodes;
+use crate::cpu::status_ops::StatusOpCodes;
+
 use crate::opcodes;
 use std::collections::HashMap;
+pub mod control_flow_ops;
+pub mod logic_ops;
+pub mod register_ops;
+pub mod status_ops;
 
 bitflags! {
 
-    pub struct CpuFlags:u8{
-        const CARRY             = 0b00000001;
-        const ZERO              = 0b00000010;
-        const INTERRUPT_DISABLE = 0b00000100;
-        const DECIMAL_MODE      = 0b00001000;
-        const BREAK             = 0b00010000;
-        const BREAK2            = 0b00100000;
-        const OVERFLOW          = 0b01000000;
-        const NEGATIV           = 0b10000000;
-    }
+  pub struct CpuFlags:u8{
+      const CARRY             = 0b00000001;
+      const ZERO              = 0b00000010;
+      const INTERRUPT_DISABLE = 0b00000100;
+      const DECIMAL_MODE      = 0b00001000;
+      const BREAK             = 0b00010000;
+      const BREAK2            = 0b00100000;
+      const OVERFLOW          = 0b01000000;
+      const NEGATIV           = 0b10000000;
+  }
 }
 
 #[derive(Debug)]
@@ -29,318 +38,6 @@ pub enum AddressingMode {
     Indirect_Y,
     NoneAddressing,
 }
-
-trait Mem {
-    fn mem_read(&self, addr: u16) -> u8;
-    fn mem_write(&mut self, addr: u16, data: u8);
-
-    fn mem_read_u16(&self, pos: u16) -> u16 {
-        let lowest = self.mem_read(pos) as u16;
-        let highest = self.mem_read(pos + 1) as u16;
-        // convert to little endian
-        (highest << 8) | (lowest as u16)
-    }
-
-    fn mem_write_u16(&mut self, pos: u16, data: u16) {
-        let highest = (data >> 8) as u8;
-        let lowest = (data & 0xff) as u8;
-        self.mem_write(pos, lowest);
-        self.mem_write(pos + 1, highest);
-    }
-}
-
-trait OpCodes {
-    /*Arithmetic Logic */
-    fn adc(&mut self, mode: &AddressingMode);
-    fn and(&mut self, mode: &AddressingMode);
-    fn asl(&mut self, mode: &AddressingMode) -> u8;
-    fn asl_acu(&mut self);
-    fn bit(&mut self, mode: &AddressingMode);
-    fn cmp(&mut self, mode: &AddressingMode);
-    fn dec(&mut self, mode: &AddressingMode);
-    fn eor(&mut self, mode: &AddressingMode);
-    fn sbc(&mut self, mode: &AddressingMode);
-
-    /*End Arithmetic Logic */
-
-    /*Control Flow */
-    fn bcc(&mut self);
-    fn bcs(&mut self);
-    fn beq(&mut self);
-    fn bne(&mut self);
-    fn bmi(&mut self);
-    fn bpl(&mut self);
-    fn bvc(&mut self);
-    fn bvs(&mut self);
-
-    fn jmp(&mut self);
-    fn jmp_indirect(&mut self);
-
-    /*END Control Flow */
-
-    /*A,X,Y Registers */
-
-    fn cpx(&mut self, mode: &AddressingMode);
-    fn cpy(&mut self, mode: &AddressingMode);
-    fn dex(&mut self);
-    fn dey(&mut self);
-
-    fn inx(&mut self);
-    fn iny(&mut self);
-    fn inc(&mut self, mode: &AddressingMode);
-
-    fn lda(&mut self, mode: &AddressingMode);
-    fn ldx(&mut self, mode: &AddressingMode);
-    fn ldy(&mut self, mode: &AddressingMode);
-
-    fn sta(&mut self, mode: &AddressingMode);
-
-    fn tax(&mut self);
-
-    /*End A,X,Y Registers */
-
-    /*Status register */
-    fn clc(&mut self);
-    fn cld(&mut self);
-    fn cli(&mut self);
-    fn clv(&mut self);
-    fn sec(&mut self);
-    fn sed(&mut self);
-    fn sei(&mut self);
-    /*End Status register */
-}
-
-impl Mem for CPU {
-    fn mem_read(&self, addr: u16) -> u8 {
-        self.memory[addr as usize]
-    }
-
-    fn mem_write(&mut self, addr: u16, data: u8) {
-        self.memory[addr as usize] = data;
-    }
-}
-
-impl OpCodes for CPU {
-    /*Arithmetic & Logic */
-    fn adc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-        self.add_to_register_a(data);
-    }
-    fn and(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-        self.set_register_a(data & self.register_a);
-    }
-    fn asl_acu(&mut self) {
-        let mut data = self.register_a;
-
-        // if bit 7 is set
-        if data >> 7 == 1 {
-            self.set_carry();
-        } else {
-            self.remove_carry()
-        }
-        data = data << 1;
-        self.set_register_a(data);
-    }
-    fn asl(&mut self, mode: &AddressingMode) -> u8 {
-        let addr = self.get_operand_address(mode);
-        let mut data = self.mem_read(addr);
-
-        // if bit 7 is set
-        if data >> 7 == 1 {
-            self.set_carry();
-        } else {
-            self.remove_carry()
-        }
-        data = data << 1;
-        self.mem_write(addr, data);
-        self.update_zero_and_negative_flags(data);
-        data
-    }
-    fn bit(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-
-        let and = self.register_a & data;
-        self.status.set(CpuFlags::ZERO, and == 0);
-        println!("{:?}", data);
-        self.status.set(CpuFlags::NEGATIV, data & 0b1000_0000 > 0);
-        self.status.set(CpuFlags::OVERFLOW, data & 0b0100_0000 > 0);
-    }
-    fn cmp(&mut self, mode: &AddressingMode) {
-        self.compare_handle(mode, self.register_a);
-    }
-    fn dec(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-        let result = data.wrapping_sub(1);
-        self.mem_write(addr, result);
-        self.update_zero_and_negative_flags(result);
-    }
-    fn eor(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-        let result = self.register_a ^ data;
-        self.register_a = result;
-        self.update_zero_and_negative_flags(self.register_a);
-    }
-
-    fn sbc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(&mode);
-        let data = self.mem_read(addr);
-        self.add_to_register_a(((data as i8).wrapping_neg()) as u8);
-    }
-    /*End Arithmetic & Logic */
-
-    /*Control Flow */
-    fn bcc(&mut self) {
-        self.branch_handle(!self.status.contains(CpuFlags::CARRY));
-    }
-    fn bcs(&mut self) {
-        self.branch_handle(self.status.contains(CpuFlags::CARRY));
-    }
-    fn beq(&mut self) {
-        self.branch_handle(self.status.contains(CpuFlags::ZERO));
-    }
-    fn bne(&mut self) {
-        self.branch_handle(!self.status.contains(CpuFlags::ZERO));
-    }
-    fn bmi(&mut self) {
-        self.branch_handle(self.status.contains(CpuFlags::NEGATIV));
-    }
-    fn bpl(&mut self) {
-        self.branch_handle(!self.status.contains(CpuFlags::NEGATIV));
-    }
-    fn bvc(&mut self) {
-        self.branch_handle(!self.status.contains(CpuFlags::OVERFLOW));
-    }
-    fn bvs(&mut self) {
-        self.branch_handle(self.status.contains(CpuFlags::OVERFLOW));
-    }
-    fn jmp(&mut self) {
-        let addr = self.mem_read_u16(self.program_counter);
-        self.program_counter = addr;
-    }
-
-    fn jmp_indirect(&mut self) {
-        let mem_address = self.mem_read_u16(self.program_counter);
-
-        //bug on 6502 when fetch on a page boundary so just fetch lsb from 0xxff but msb from 0xx00
-
-        let indirect_ref = if mem_address & 0x00FF == 0x00FF {
-            let lo = self.mem_read(mem_address);
-            let hi = self.mem_read(mem_address & 0xFF00);
-            (hi as u16) << 8 | (lo as u16)
-        } else {
-            self.mem_read_u16(mem_address)
-        };
-
-        self.program_counter = indirect_ref;
-    }
-
-    /*END Control Flow */
-
-    /*A,X,Y Registers */
-
-    fn cpx(&mut self, mode: &AddressingMode) {
-        self.compare_handle(mode, self.register_x);
-    }
-    fn cpy(&mut self, mode: &AddressingMode) {
-        self.compare_handle(mode, self.register_y);
-    }
-
-    fn dex(&mut self) {
-        let result = self.register_x.wrapping_sub(1);
-        self.register_x = result;
-        self.update_zero_and_negative_flags(self.register_x);
-    }
-
-    fn dey(&mut self) {
-        let result = self.register_y.wrapping_sub(1);
-        self.register_y = result;
-        self.update_zero_and_negative_flags(self.register_y);
-    }
-
-    fn inx(&mut self) {
-        self.register_x = self.register_x.wrapping_add(1);
-        self.update_zero_and_negative_flags(self.register_x);
-    }
-    fn iny(&mut self) {
-        self.register_y = self.register_y.wrapping_add(1);
-        self.update_zero_and_negative_flags(self.register_y);
-    }
-
-    fn inc(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let data = self.mem_read(addr);
-        let result = data.wrapping_add(1);
-        self.mem_write(addr, result);
-        self.update_zero_and_negative_flags(result);
-    }
-
-    fn lda(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let value = self.mem_read(addr);
-
-        self.register_a = value;
-        self.update_zero_and_negative_flags(self.register_a);
-    }
-
-    fn ldx(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let value = self.mem_read(addr);
-
-        self.register_x = value;
-        self.update_zero_and_negative_flags(self.register_x);
-    }
-    fn ldy(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        let value = self.mem_read(addr);
-
-        self.register_y = value;
-        self.update_zero_and_negative_flags(self.register_y);
-    }
-
-    fn sta(&mut self, mode: &AddressingMode) {
-        let addr = self.get_operand_address(mode);
-        self.mem_write(addr, self.register_a);
-    }
-
-    fn tax(&mut self) {
-        self.register_x = self.register_a;
-        self.update_zero_and_negative_flags(self.register_x);
-    }
-
-    /*End A,X,Y Registers */
-
-    /*Status register */
-    fn clc(&mut self) {
-        self.status.remove(CpuFlags::CARRY);
-    }
-    fn cld(&mut self) {
-        self.status.remove(CpuFlags::DECIMAL_MODE);
-    }
-    fn cli(&mut self) {
-        self.status.remove(CpuFlags::INTERRUPT_DISABLE);
-    }
-    fn clv(&mut self) {
-        self.status.remove(CpuFlags::OVERFLOW);
-    }
-
-    fn sec(&mut self) {
-        self.status.insert(CpuFlags::CARRY);
-    }
-    fn sed(&mut self) {
-        self.status.insert(CpuFlags::DECIMAL_MODE);
-    }
-    fn sei(&mut self) {
-        self.status.insert(CpuFlags::INTERRUPT_DISABLE);
-    }
-    /*End Status register */
-}
-
 pub struct CPU {
     pub register_x: u8,
     pub register_a: u8,
@@ -360,6 +57,28 @@ impl CPU {
             program_counter: 0,
             memory: [0; 0xffff],
         }
+    }
+
+    fn mem_read(&self, addr: u16) -> u8 {
+        self.memory[addr as usize]
+    }
+
+    fn mem_write(&mut self, addr: u16, data: u8) {
+        self.memory[addr as usize] = data;
+    }
+
+    fn mem_read_u16(&self, pos: u16) -> u16 {
+        let lowest = self.mem_read(pos) as u16;
+        let highest = self.mem_read(pos + 1) as u16;
+        // convert to little endian
+        (highest << 8) | (lowest as u16)
+    }
+
+    fn mem_write_u16(&mut self, pos: u16, data: u16) {
+        let highest = (data >> 8) as u8;
+        let lowest = (data & 0xff) as u8;
+        self.mem_write(pos, lowest);
+        self.mem_write(pos + 1, highest);
     }
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
