@@ -1,6 +1,8 @@
-use super::AddressingMode;
+use crate::opcodes::OpCode;
+
 use super::CpuFlags;
 use super::CPU;
+pub mod test;
 
 pub trait ControlOpCodes {
     /*Control Flow */
@@ -17,6 +19,7 @@ pub trait ControlOpCodes {
     fn jmp_indirect(&mut self);
 
     /*END Control Flow */
+    fn handle_control_flow_ops(&mut self, opcode: &OpCode, code: u8);
 }
 
 impl ControlOpCodes for CPU {
@@ -67,4 +70,24 @@ impl ControlOpCodes for CPU {
     }
 
     /*END Control Flow */
+
+    fn handle_control_flow_ops(&mut self, opcode: &OpCode, code: u8) {
+        match code {
+            /*Control Flow */
+            0x90 => self.bcc(),
+            0xb0 => self.bcs(),
+            0xf0 => self.beq(),
+            0xd0 => self.bne(),
+            0x30 => self.bmi(),
+            0x10 => self.bpl(),
+            0x50 => self.bvc(),
+            0x70 => self.bvs(),
+
+            0x4c => self.jmp(),
+            0x6c => self.jmp_indirect(),
+
+            /*END Control Flow */
+            _ => return,
+        }
+    }
 }

@@ -1,7 +1,9 @@
 use crate::cpu::CpuFlags;
+use crate::opcodes::OpCode;
 
 use super::AddressingMode;
 use super::CPU;
+pub mod test;
 
 pub trait LogicOpCodes {
     /*Arithmetic Logic */
@@ -16,6 +18,7 @@ pub trait LogicOpCodes {
     fn sbc(&mut self, mode: &AddressingMode);
 
     /*End Arithmetic Logic */
+    fn handle_logic_ops(&mut self, opcode: &OpCode, code: u8);
 }
 
 impl LogicOpCodes for CPU {
@@ -91,4 +94,38 @@ impl LogicOpCodes for CPU {
         self.add_to_register_a(((data as i8).wrapping_neg()) as u8);
     }
     /*End Arithmetic & Logic */
+
+    fn handle_logic_ops(&mut self, opcode: &OpCode, code: u8) {
+        match code {
+            /* Arithmetic & Logic */
+            0x69 | 0x65 | 0x75 | 0x6d | 0x7d | 0x79 | 0x61 | 0x71 => {
+                self.adc(&opcode.mode);
+            }
+            0x29 | 0x25 | 0x35 | 0x2d | 0x3d | 0x39 | 0x21 | 0x31 => {
+                self.and(&opcode.mode);
+            }
+            0x0a => self.asl_acu(),
+            0x06 | 0x16 | 0x0e | 0x1e => {
+                self.asl(&opcode.mode);
+            }
+            0x24 | 0x2c => {
+                self.bit(&opcode.mode);
+            }
+            0xc9 | 0xc5 | 0xd5 | 0xcd | 0xdd | 0xd9 | 0xc1 | 0xd1 => {
+                self.cmp(&opcode.mode);
+            }
+            0xc6 | 0xd6 | 0xce | 0xde => {
+                self.dec(&opcode.mode);
+            }
+            0x49 | 0x45 | 0x55 | 0x4d | 0x5d | 0x59 | 0x41 | 0x51 => {
+                self.eor(&opcode.mode);
+            }
+            0xe9 | 0xe5 | 0xf5 | 0xed | 0xfd | 0xf9 | 0xe1 | 0xf1 => {
+                self.sbc(&opcode.mode);
+            }
+
+            /* End Arithmetic & Logic */
+            _ => return,
+        }
+    }
 }

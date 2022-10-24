@@ -1,6 +1,7 @@
-use crate::cpu::CpuFlags;
+use crate::{cpu::CpuFlags, opcodes::OpCode};
 
 use super::CPU;
+pub mod test;
 
 pub trait StatusOpCodes {
     /*Status register */
@@ -12,6 +13,7 @@ pub trait StatusOpCodes {
     fn sed(&mut self);
     fn sei(&mut self);
     /*End Status register */
+    fn handle_status_ops(&mut self, opcode: &OpCode, code: u8);
 }
 
 impl StatusOpCodes for CPU {
@@ -39,4 +41,19 @@ impl StatusOpCodes for CPU {
         self.status.insert(CpuFlags::INTERRUPT_DISABLE);
     }
     /*End Status register */
+
+    fn handle_status_ops(&mut self, opcode: &OpCode, code: u8) {
+        match code {
+            /*Status Register */
+            0x18 => self.clc(),
+            0xd8 => self.cld(),
+            0x58 => self.cli(),
+            0xb8 => self.clv(),
+            0x38 => self.sec(),
+            0xf8 => self.sed(),
+            0x78 => self.sei(),
+            /*End Status Register */
+            _ => return,
+        }
+    }
 }

@@ -1,5 +1,8 @@
+use crate::opcodes::OpCode;
+
 use super::AddressingMode;
 use super::CPU;
+pub mod test;
 
 pub trait RegisterOpCodes {
     /*A,X,Y Registers */
@@ -22,6 +25,8 @@ pub trait RegisterOpCodes {
     fn tax(&mut self);
 
     /*End A,X,Y Registers */
+
+    fn handle_register_ops(&mut self, opcode: &OpCode, code: u8);
 }
 
 impl RegisterOpCodes for CPU {
@@ -97,4 +102,44 @@ impl RegisterOpCodes for CPU {
     }
 
     /*End A,X,Y Registers */
+
+    fn handle_register_ops(&mut self, opcode: &OpCode, code: u8) {
+        match code {
+            /* A,X,Y Registers */
+            0xe0 | 0xe4 | 0xec => {
+                self.cpx(&opcode.mode);
+            }
+            0xc0 | 0xc4 | 0xcc => {
+                self.cpy(&opcode.mode);
+            }
+            0xca => {
+                self.dex();
+            }
+            0x88 => {
+                self.dey();
+            }
+            0xa9 | 0xa5 | 0xb5 | 0xad | 0xbd | 0xb9 | 0xa1 | 0xb1 => {
+                self.lda(&opcode.mode);
+            }
+
+            0xa2 | 0xa6 | 0xb6 | 0xae | 0xbe => {
+                self.ldx(&opcode.mode);
+            }
+            0xa0 | 0xa4 | 0xb4 | 0xac | 0xbc => {
+                self.ldy(&opcode.mode);
+            }
+
+            0x85 | 0x95 | 0x8d | 0x9d | 0x99 | 0x81 | 0x91 => {
+                self.sta(&opcode.mode);
+            }
+
+            0xAA => self.tax(),
+            0xe8 => self.inx(),
+            0xc8 => self.iny(),
+            0xe6 | 0xf6 | 0xee | 0xFE => self.inc(&opcode.mode),
+
+            /*End A,X,Y Registers */
+            _ => return,
+        }
+    }
 }
