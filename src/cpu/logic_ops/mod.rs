@@ -21,6 +21,12 @@ pub trait LogicOpCodes {
 
     fn ora(&mut self, mode: &AddressingMode);
 
+    fn rol_acu(&mut self);
+    fn rol(&mut self, mode: &AddressingMode);
+
+    fn ror_acu(&mut self);
+    fn ror(&mut self, mode: &AddressingMode);
+
     fn sbc(&mut self, mode: &AddressingMode);
 
     /*End Arithmetic Logic */
@@ -130,6 +136,58 @@ impl LogicOpCodes for CPU {
         self.set_register_a(result);
     }
 
+    fn rol_acu(&mut self) {
+        let data = self.register_a;
+
+        if data >> 7 == 1 {
+            self.set_carry();
+        } else {
+            self.remove_carry();
+        }
+
+        let result = (data << 1) | (data >> 7);
+        self.set_register_a(result);
+    }
+    fn rol(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+
+        if data >> 7 == 1 {
+            self.set_carry();
+        } else {
+            self.remove_carry();
+        }
+
+        let result = (data << 1) | (data >> 7);
+        self.mem_write(addr, result);
+    }
+
+    fn ror_acu(&mut self) {
+        let data = self.register_a;
+
+        if data >> 7 == 1 {
+            self.set_carry();
+        } else {
+            self.remove_carry();
+        }
+
+        let result = (data >> 1) | (data << 7);
+        self.set_register_a(result);
+    }
+    fn ror(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+
+        if data >> 7 == 1 {
+            self.set_carry();
+        } else {
+            self.remove_carry();
+        }
+
+        let result = (data >> 1) | (data << 7);
+        self.mem_write(addr, result);
+    }
+
     fn sbc(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(&mode);
         let data = self.mem_read(addr);
@@ -169,6 +227,16 @@ impl LogicOpCodes for CPU {
             }
             0x09 | 0x05 | 0x15 | 0x0d | 0x1d | 0x19 | 0x01 | 0x11 => {
                 self.ora(&opcode.mode);
+            }
+
+            0x2a => self.rol_acu(),
+            0x26 | 0x36 | 0x2e | 0x3e => {
+                self.rol(&opcode.mode);
+            }
+
+            0x6a => self.ror_acu(),
+            0x66 | 0x76 | 0x6e | 0x7e => {
+                self.ror(&opcode.mode);
             }
             0xe9 | 0xe5 | 0xf5 | 0xed | 0xfd | 0xf9 | 0xe1 | 0xf1 => {
                 self.sbc(&opcode.mode);
