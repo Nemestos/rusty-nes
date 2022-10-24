@@ -216,6 +216,9 @@ impl CPU {
             if code == 0x00 {
                 return;
             }
+            if code == 0xEA {
+                self.program_counter += 1
+            }
             self.handle_control_flow_ops(opcode, code);
             self.handle_logic_ops(opcode, code);
             self.handle_register_ops(opcode, code);

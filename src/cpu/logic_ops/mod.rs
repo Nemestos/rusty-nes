@@ -15,6 +15,12 @@ pub trait LogicOpCodes {
     fn cmp(&mut self, mode: &AddressingMode);
     fn dec(&mut self, mode: &AddressingMode);
     fn eor(&mut self, mode: &AddressingMode);
+
+    fn lsr(&mut self, mode: &AddressingMode) -> u8;
+    fn lsr_acu(&mut self);
+
+    fn ora(&mut self, mode: &AddressingMode);
+
     fn sbc(&mut self, mode: &AddressingMode);
 
     /*End Arithmetic Logic */
@@ -88,6 +94,42 @@ impl LogicOpCodes for CPU {
         self.update_zero_and_negative_flags(self.register_a);
     }
 
+    fn lsr_acu(&mut self) {
+        let mut data = self.register_a;
+
+        // if bit 7 is set
+        if data & 0b0000_0001 == 1 {
+            self.set_carry();
+        } else {
+            self.remove_carry()
+        }
+        data = data >> 1;
+        self.set_register_a(data);
+    }
+    fn lsr(&mut self, mode: &AddressingMode) -> u8 {
+        let addr = self.get_operand_address(mode);
+        let mut data = self.mem_read(addr);
+
+        // if bit 7 is set
+        if data & 0b0000_0001 == 1 {
+            self.set_carry();
+        } else {
+            self.remove_carry()
+        }
+        data = data >> 1;
+        self.mem_write(addr, data);
+        self.update_zero_and_negative_flags(data);
+        data
+    }
+
+    fn ora(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+
+        let result = self.register_a | data;
+        self.set_register_a(result);
+    }
+
     fn sbc(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(&mode);
         let data = self.mem_read(addr);
@@ -119,6 +161,14 @@ impl LogicOpCodes for CPU {
             }
             0x49 | 0x45 | 0x55 | 0x4d | 0x5d | 0x59 | 0x41 | 0x51 => {
                 self.eor(&opcode.mode);
+            }
+            0x4a => self.lsr_acu(),
+
+            0x46 | 0x56 | 0x4e | 0x5e => {
+                self.lsr(&opcode.mode);
+            }
+            0x09 | 0x05 | 0x15 | 0x0d | 0x1d | 0x19 | 0x01 | 0x11 => {
+                self.ora(&opcode.mode);
             }
             0xe9 | 0xe5 | 0xf5 | 0xed | 0xfd | 0xf9 | 0xe1 | 0xf1 => {
                 self.sbc(&opcode.mode);

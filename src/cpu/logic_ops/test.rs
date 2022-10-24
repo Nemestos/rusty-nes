@@ -93,8 +93,25 @@ fn test_cmp() {
 #[test]
 fn test_eor() {
     let mut cpu = CPU::new();
-    cpu.load_and_run(vec![0xa9, 0x10, 0x49, 0xff]);
-    assert_eq!(cpu.register_a, 0x10 ^ 0xff);
+    cpu.mem_write(0x10, 0x09);
+    cpu.load_and_run(vec![0xa9, 0x10, 0x4D, 0x10, 0x00]);
+    assert_eq!(cpu.register_a, 0x10 ^ 0x09);
+}
+
+#[test]
+fn test_lsr() {
+    let mut cpu = CPU::new();
+    cpu.mem_write(0x10, 0x08);
+    cpu.load_and_run(vec![0x4e, 0x10, 0x00]);
+    assert_eq!(cpu.mem_read(0x10), 0x04)
+}
+
+#[test]
+fn test_ora() {
+    let mut cpu = CPU::new();
+    cpu.mem_write(0x10, 0x09);
+    cpu.load_and_run(vec![0xa9, 0x05, 0x0d, 0x10, 0x00]);
+    assert_eq!(cpu.register_a, 0x05 | 0x09)
 }
 
 /*End Arithmethic & logic */
