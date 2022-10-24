@@ -162,6 +162,11 @@ lazy_static! {
         OpCode::new(0x10, "BPL", 2, 2, AddressingMode::NoneAddressing),
         OpCode::new(0x50, "BVC", 2, 2, AddressingMode::NoneAddressing),
         OpCode::new(0x70, "BVS", 2, 2, AddressingMode::NoneAddressing),
+
+        OpCode::new(0x4C, "JMP", 3, 3, AddressingMode::NoneAddressing),
+        OpCode::new(0x6C, "JMP", 3, 5, AddressingMode::NoneAddressing),
+
+
         /* End Control flow */
 
         /*Status register */
