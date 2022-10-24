@@ -129,6 +129,16 @@ impl CPU {
     fn remove_carry(&mut self) {
         self.status.remove(CpuFlags::CARRY);
     }
+    fn branch_handle(&mut self, invariant: bool) {
+        if invariant {
+            let jump: i8 = self.mem_read(self.program_counter) as i8;
+            let jump_addr = self
+                .program_counter
+                .wrapping_add(1)
+                .wrapping_add(jump as u16);
+            self.program_counter = jump_addr;
+        }
+    }
 
     fn compare_handle(&mut self, mode: &AddressingMode, base: u8) {
         let addr = self.get_operand_address(mode);
