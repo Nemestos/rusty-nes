@@ -164,7 +164,6 @@ lazy_static! {
         OpCode::new(0xac, "LDY", 3, 4, AddressingMode::Absolute),
         OpCode::new(0xbc, "LDY", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X),
 
-        OpCode::new(0xaa, "TAX", 1, 2, AddressingMode::NoneAddressing),
 
         OpCode::new(0x85, "STA", 2, 3, AddressingMode::ZeroPage),
         OpCode::new(0x95, "STA", 2, 4, AddressingMode::ZeroPage_X),
@@ -173,6 +172,23 @@ lazy_static! {
         OpCode::new(0x99, "STA", 3, 5, AddressingMode::Absolute_Y),
         OpCode::new(0x81, "STA", 2, 6, AddressingMode::Indirect_X),
         OpCode::new(0x91, "STA", 2, 6, AddressingMode::Indirect_Y),
+
+        OpCode::new(0x86, "STX", 2, 3, AddressingMode::ZeroPage),
+        OpCode::new(0x96, "STX", 2, 4, AddressingMode::ZeroPage_Y),
+        OpCode::new(0x8E, "STX", 3, 4, AddressingMode::Absolute),
+
+        OpCode::new(0x84, "STY", 2, 3, AddressingMode::ZeroPage),
+        OpCode::new(0x94, "STY", 2, 4, AddressingMode::ZeroPage_X),
+        OpCode::new(0x8d, "STY", 3, 4, AddressingMode::Absolute),
+
+        OpCode::new(0xaa, "TAX", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xa8, "TAY", 1, 2, AddressingMode::NoneAddressing),
+
+        OpCode::new(0x8a, "TXA", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x98, "TYA", 1, 2, AddressingMode::NoneAddressing),
+
+
+
 
 
 
