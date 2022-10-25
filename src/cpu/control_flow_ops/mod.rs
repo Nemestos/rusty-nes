@@ -18,6 +18,9 @@ pub trait ControlOpCodes {
     fn jmp(&mut self);
     fn jmp_indirect(&mut self);
 
+    fn jsr(&mut self);
+    fn rts(&mut self);
+
     /*END Control Flow */
     fn handle_control_flow_ops(&mut self, opcode: &OpCode, code: u8);
 }
@@ -68,6 +71,14 @@ impl ControlOpCodes for CPU {
 
         self.program_counter = indirect_ref;
     }
+    fn jsr(&mut self) {
+        self.stack_push_u16(self.program_counter + 2 - 1);
+        let target = self.mem_read_u16(self.program_counter);
+        self.program_counter = target;
+    }
+    fn rts(&mut self) {
+        self.program_counter = self.stack_pull_u16() + 1;
+    }
 
     /*END Control Flow */
 
@@ -85,6 +96,9 @@ impl ControlOpCodes for CPU {
 
             0x4c => self.jmp(),
             0x6c => self.jmp_indirect(),
+
+            0x20 => self.jsr(),
+            0x60 => self.rts(),
 
             /*END Control Flow */
             _ => return,

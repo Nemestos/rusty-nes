@@ -30,6 +30,9 @@ pub trait RegisterOpCodes {
     fn txa(&mut self);
     fn tya(&mut self);
 
+    fn tsx(&mut self);
+    fn txs(&mut self);
+
     /*End A,X,Y Registers */
 
     fn handle_register_ops(&mut self, opcode: &OpCode, code: u8);
@@ -130,6 +133,14 @@ impl RegisterOpCodes for CPU {
         self.update_zero_and_negative_flags(self.register_a);
     }
 
+    fn tsx(&mut self) {
+        self.register_x = self.stack_ptr;
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+    fn txs(&mut self) {
+        self.stack_ptr = self.register_x;
+    }
+
     /*End A,X,Y Registers */
 
     fn handle_register_ops(&mut self, opcode: &OpCode, code: u8) {
@@ -173,6 +184,9 @@ impl RegisterOpCodes for CPU {
 
             0x8a => self.txa(),
             0x98 => self.tya(),
+
+            0xba => self.tsx(),
+            0x9a => self.txs(),
 
             0xe8 => self.inx(),
             0xc8 => self.iny(),

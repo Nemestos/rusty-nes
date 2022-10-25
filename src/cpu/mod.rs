@@ -6,8 +6,11 @@ use crate::cpu::status_ops::StatusOpCodes;
 
 use crate::opcodes;
 use std::collections::HashMap;
+
+use self::other_ops::OtherOpCodes;
 pub mod control_flow_ops;
 pub mod logic_ops;
+pub mod other_ops;
 pub mod register_ops;
 pub mod stack_ops;
 pub mod status_ops;
@@ -15,6 +18,7 @@ pub mod status_ops;
 const STACK_PTR_START: u16 = 0x0100;
 
 const STACK_PTR_END: u16 = 0x01FF;
+const STACK_PTR_RESET: u8 = 0xFD;
 
 bitflags! {
 
@@ -60,7 +64,7 @@ impl CPU {
             register_a: 0,
             register_x: 0,
             register_y: 0,
-            stack_ptr: STACK_PTR_END as u8,
+            stack_ptr: STACK_PTR_RESET,
             status: CpuFlags::from_bits_truncate(0b100100),
             program_counter: 0,
             memory: [0; 0xffff],
@@ -137,13 +141,25 @@ impl CPU {
         self.status.remove(CpuFlags::CARRY);
     }
     fn stack_push(&mut self, data: u8) {
-        self.memory[self.stack_ptr as usize] = data;
-        self.stack_ptr -= 1;
+        self.mem_write(STACK_PTR_START + self.stack_ptr as u16, data);
+        self.stack_ptr = self.stack_ptr.wrapping_sub(1);
     }
     fn stack_pull(&mut self) -> u8 {
-        self.stack_ptr += 1;
-        let data = self.memory[self.stack_ptr as usize];
+        self.stack_ptr = self.stack_ptr.wrapping_add(1);
+        let data = self.mem_read(STACK_PTR_START + self.stack_ptr as u16);
         data
+    }
+    fn stack_push_u16(&mut self, data: u16) {
+        let hi = (data >> 8) as u8;
+        let lo = (data & 0xff) as u8;
+        self.stack_push(hi);
+        self.stack_push(lo);
+    }
+    fn stack_pull_u16(&mut self) -> u16 {
+        let lo = self.stack_pull() as u16;
+        let hi = self.stack_pull() as u16;
+
+        hi << 8 | lo
     }
 
     fn branch_handle(&mut self, invariant: bool) {
@@ -230,14 +246,13 @@ impl CPU {
             if code == 0x00 {
                 return;
             }
-            if code == 0xEA {
-                self.program_counter += 1
-            }
+
             self.handle_control_flow_ops(opcode, code);
             self.handle_logic_ops(opcode, code);
             self.handle_register_ops(opcode, code);
             self.handle_status_ops(opcode, code);
             self.handle_stack_ops(opcode, code);
+            self.handle_other_ops(opcode, code);
 
             if program_counter_state == self.program_counter {
                 self.program_counter += (opcode.len - 1) as u16;
@@ -248,7 +263,7 @@ impl CPU {
         self.register_a = 0;
         self.register_x = 0;
         self.status = CpuFlags::from_bits_truncate(0b100100);
-        self.stack_ptr = STACK_PTR_END as u8;
+        self.stack_ptr = STACK_PTR_RESET;
         self.program_counter = self.mem_read_u16(0xFFFC);
     }
     pub fn load_and_run(&mut self, program: Vec<u8>) {

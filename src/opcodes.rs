@@ -187,6 +187,9 @@ lazy_static! {
         OpCode::new(0x8a, "TXA", 1, 2, AddressingMode::NoneAddressing),
         OpCode::new(0x98, "TYA", 1, 2, AddressingMode::NoneAddressing),
 
+        OpCode::new(0xba, "TSX", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x9a, "TXS", 1, 2, AddressingMode::NoneAddressing),
+
 
         /*End A,X,Y Registers */
 
@@ -203,6 +206,8 @@ lazy_static! {
 
         OpCode::new(0x4C, "JMP", 3, 3, AddressingMode::NoneAddressing),
         OpCode::new(0x6C, "JMP", 3, 5, AddressingMode::NoneAddressing),
+        OpCode::new(0x20, "JSR", 3, 6, AddressingMode::NoneAddressing),
+        OpCode::new(0x60, "RTS", 1, 6, AddressingMode::NoneAddressing),
 
 
         /* End Control flow */
@@ -231,6 +236,7 @@ lazy_static! {
 
         /*Other*/
         OpCode::new(0xEA, "NOP", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x40, "RTI", 1, 6, AddressingMode::NoneAddressing),
         /*End Other*/
 
 
