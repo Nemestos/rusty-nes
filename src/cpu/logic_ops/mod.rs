@@ -78,7 +78,6 @@ impl LogicOpCodes for CPU {
 
         let and = self.register_a & data;
         self.status.set(CpuFlags::ZERO, and == 0);
-        println!("{:?}", data);
         self.status.set(CpuFlags::NEGATIV, data & 0b1000_0000 > 0);
         self.status.set(CpuFlags::OVERFLOW, data & 0b0100_0000 > 0);
     }

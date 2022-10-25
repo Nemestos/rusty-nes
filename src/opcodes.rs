@@ -188,10 +188,6 @@ lazy_static! {
         OpCode::new(0x98, "TYA", 1, 2, AddressingMode::NoneAddressing),
 
 
-
-
-
-
         /*End A,X,Y Registers */
 
 
@@ -221,6 +217,15 @@ lazy_static! {
         OpCode::new(0x78, "SEI", 1, 2, AddressingMode::NoneAddressing),
 
         /*End Status register */
+
+        /*Stack related */
+        OpCode::new(0x48, "PHA", 1, 3, AddressingMode::NoneAddressing),
+        OpCode::new(0x48, "PHP", 1, 3, AddressingMode::NoneAddressing),
+
+        /*End Stack related */
+
+
+
 
         /*Other*/
         OpCode::new(0xEA, "NOP", 1, 2, AddressingMode::NoneAddressing),

@@ -119,7 +119,6 @@ fn test_ror() {
 fn test_sbc() {
     let mut cpu = CPU::new();
     cpu.load_and_run(vec![0xa9, 0x50, 0xe9, 0x30, 0x00]);
-    println!("{:?}", cpu.register_a);
     assert_eq!(cpu.register_a, 0x20);
 }
 #[test]

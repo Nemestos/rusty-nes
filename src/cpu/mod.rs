@@ -1,6 +1,7 @@
 use crate::cpu::control_flow_ops::ControlOpCodes;
 use crate::cpu::logic_ops::LogicOpCodes;
 use crate::cpu::register_ops::RegisterOpCodes;
+use crate::cpu::stack_ops::StackOpCodes;
 use crate::cpu::status_ops::StatusOpCodes;
 
 use crate::opcodes;
@@ -8,7 +9,12 @@ use std::collections::HashMap;
 pub mod control_flow_ops;
 pub mod logic_ops;
 pub mod register_ops;
+pub mod stack_ops;
 pub mod status_ops;
+
+const STACK_PTR_START: u16 = 0x0100;
+
+const STACK_PTR_END: u16 = 0x01FF;
 
 bitflags! {
 
@@ -42,6 +48,7 @@ pub struct CPU {
     pub register_x: u8,
     pub register_a: u8,
     pub register_y: u8,
+    pub stack_ptr: u8,
     pub status: CpuFlags,
     pub program_counter: u16,
     memory: [u8; 0xffff],
@@ -53,6 +60,7 @@ impl CPU {
             register_a: 0,
             register_x: 0,
             register_y: 0,
+            stack_ptr: STACK_PTR_END as u8,
             status: CpuFlags::from_bits_truncate(0b100100),
             program_counter: 0,
             memory: [0; 0xffff],
@@ -103,7 +111,6 @@ impl CPU {
     fn add_to_register_a(&mut self, data: u8) {
         let is_carry = self.status.contains(CpuFlags::CARRY);
         let sum = self.register_a as u16 + data as u16 + is_carry as u16;
-        println!("{:?}", data);
 
         //when an another overflow on 2 bytes
         let carry = sum > 0xff;
@@ -129,6 +136,16 @@ impl CPU {
     fn remove_carry(&mut self) {
         self.status.remove(CpuFlags::CARRY);
     }
+    fn stack_push(&mut self, data: u8) {
+        self.memory[self.stack_ptr as usize] = data;
+        self.stack_ptr -= 1;
+    }
+    fn stack_pull(&mut self) -> u8 {
+        let data = self.memory[self.stack_ptr as usize];
+        self.stack_ptr += 1;
+        data
+    }
+
     fn branch_handle(&mut self, invariant: bool) {
         if invariant {
             let jump: i8 = self.mem_read(self.program_counter) as i8;
@@ -153,10 +170,8 @@ impl CPU {
             AddressingMode::Absolute => self.mem_read_u16(self.program_counter),
             AddressingMode::ZeroPage_X => {
                 let pos = self.mem_read(self.program_counter);
-                println!("{}", self.register_x);
 
                 let addr = pos.wrapping_add(self.register_x) as u16;
-                println!("{}", addr);
                 addr
             }
             AddressingMode::ZeroPage_Y => {
@@ -207,7 +222,6 @@ impl CPU {
         loop {
             let code = self.mem_read(self.program_counter);
             self.program_counter += 1;
-            println!("{:?}", code);
 
             let program_counter_state = self.program_counter;
             let opcode = opcodes
@@ -223,6 +237,7 @@ impl CPU {
             self.handle_logic_ops(opcode, code);
             self.handle_register_ops(opcode, code);
             self.handle_status_ops(opcode, code);
+            self.handle_stack_ops(opcode, code);
 
             if program_counter_state == self.program_counter {
                 self.program_counter += (opcode.len - 1) as u16;
@@ -233,7 +248,7 @@ impl CPU {
         self.register_a = 0;
         self.register_x = 0;
         self.status = CpuFlags::from_bits_truncate(0b100100);
-
+        self.stack_ptr = STACK_PTR_END as u8;
         self.program_counter = self.mem_read_u16(0xFFFC);
     }
     pub fn load_and_run(&mut self, program: Vec<u8>) {
