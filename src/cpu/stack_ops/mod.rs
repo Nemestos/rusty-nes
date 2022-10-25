@@ -8,6 +8,8 @@ pub trait StackOpCodes {
     /*Stack related */
     fn pha(&mut self);
     fn php(&mut self);
+    fn pla(&mut self);
+    fn plp(&mut self);
 
     /*END Stack related */
     fn handle_stack_ops(&mut self, opcode: &OpCode, code: u8);
@@ -25,6 +27,16 @@ impl StackOpCodes for CPU {
         self.stack_push(data.bits());
     }
 
+    fn pla(&mut self) {
+        let pulled = self.stack_pull();
+        self.set_register_a(pulled);
+    }
+
+    fn plp(&mut self) {
+        let pulled = self.stack_pull();
+        self.status.bits = pulled & 0b1100_1111
+    }
+
     /*END Stack related */
 
     fn handle_stack_ops(&mut self, opcode: &OpCode, code: u8) {
@@ -32,6 +44,9 @@ impl StackOpCodes for CPU {
             /*Stack related */
             0x48 => self.pha(),
             0x08 => self.php(),
+
+            0x68 => self.pla(),
+            0x28 => self.plp(),
 
             /*END Stack related */
             _ => return,

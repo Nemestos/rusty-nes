@@ -141,8 +141,8 @@ impl CPU {
         self.stack_ptr -= 1;
     }
     fn stack_pull(&mut self) -> u8 {
-        let data = self.memory[self.stack_ptr as usize];
         self.stack_ptr += 1;
+        let data = self.memory[self.stack_ptr as usize];
         data
     }
 

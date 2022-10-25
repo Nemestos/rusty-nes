@@ -220,7 +220,9 @@ lazy_static! {
 
         /*Stack related */
         OpCode::new(0x48, "PHA", 1, 3, AddressingMode::NoneAddressing),
-        OpCode::new(0x48, "PHP", 1, 3, AddressingMode::NoneAddressing),
+        OpCode::new(0x08, "PHP", 1, 3, AddressingMode::NoneAddressing),
+        OpCode::new(0x68, "PLA", 1, 4, AddressingMode::NoneAddressing),
+        OpCode::new(0x28, "PLP", 1, 4, AddressingMode::NoneAddressing),
 
         /*End Stack related */
 
