@@ -190,7 +190,7 @@ impl LogicOpCodes for CPU {
     fn sbc(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(&mode);
         let data = self.mem_read(addr);
-        self.add_to_register_a(((data as i8).wrapping_neg()) as u8);
+        self.add_to_register_a(((data as i8).wrapping_neg().wrapping_sub(1)) as u8);
     }
     /*End Arithmetic & Logic */
 

@@ -72,7 +72,7 @@ impl ControlOpCodes for CPU {
         self.program_counter = indirect_ref;
     }
     fn jsr(&mut self) {
-        self.stack_push_u16(self.program_counter + 2 - 1);
+        self.stack_push_u16(self.program_counter + 1);
         let target = self.mem_read_u16(self.program_counter);
         self.program_counter = target;
     }

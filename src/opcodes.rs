@@ -25,7 +25,6 @@ lazy_static! {
     pub static ref CPU_OPS_CODES: Vec<OpCode> = vec![
 
         /* Arithmetic & logic */
-
         OpCode::new(0x69,"ADC",2,2,AddressingMode::Immediate),
         OpCode::new(0x65,"ADC",2,3,AddressingMode::ZeroPage),
         OpCode::new(0x75,"ADC",2,4,AddressingMode::ZeroPage_X),
@@ -51,14 +50,14 @@ lazy_static! {
         OpCode::new(0x1E,"ASL",3,7,AddressingMode::Absolute_X),
 
         OpCode::new(0x24,"BIT",2,3,AddressingMode::ZeroPage),
-        OpCode::new(0x2C,"BIT",2,3,AddressingMode::Absolute),
+        OpCode::new(0x2C,"BIT",3,4,AddressingMode::Absolute),
 
         OpCode::new(0xC9,"CMP",2,2,AddressingMode::Immediate),
         OpCode::new(0xC5,"CMP",2,3,AddressingMode::ZeroPage),
         OpCode::new(0xD5,"CMP",2,4,AddressingMode::ZeroPage_X),
         OpCode::new(0xCD,"CMP",3,4,AddressingMode::Absolute),
         OpCode::new(0xDD,"CMP",3,4,AddressingMode::Absolute_X),
-        OpCode::new(0xC9,"CMP",3,4,AddressingMode::Absolute_Y),
+        OpCode::new(0xD9,"CMP",3,4,AddressingMode::Absolute_Y),
         OpCode::new(0xC1,"CMP",2,6,AddressingMode::Indirect_X),
         OpCode::new(0xD1,"CMP",2,5,AddressingMode::Indirect_Y),
 
@@ -103,7 +102,6 @@ lazy_static! {
         OpCode::new(0x6E,"ROR",3,6,AddressingMode::Absolute),
         OpCode::new(0x7E,"ROR",3,7,AddressingMode::Absolute_X),
 
-
         OpCode::new(0xe9,"SBC",2,2,AddressingMode::Immediate),
         OpCode::new(0xe5,"SBC",2,3,AddressingMode::ZeroPage),
         OpCode::new(0xf5,"SBC",2,4,AddressingMode::ZeroPage_X),
@@ -114,16 +112,11 @@ lazy_static! {
         OpCode::new(0xf1,"SBC",2,5,AddressingMode::Indirect_Y),
 
         /* End Arithmetic & logic */
-
-
-
         /*Interupts */
         OpCode::new(0x00, "BRK", 1, 7, AddressingMode::NoneAddressing),
 
         /*End Interupts */
-
         /*A,X,Y Registers */
-
         OpCode::new(0xE0,"CPX",2,2,AddressingMode::Immediate),
         OpCode::new(0xE4,"CPX",2,3,AddressingMode::ZeroPage),
         OpCode::new(0xEC,"CPX",3,4,AddressingMode::Absolute),
@@ -164,7 +157,6 @@ lazy_static! {
         OpCode::new(0xac, "LDY", 3, 4, AddressingMode::Absolute),
         OpCode::new(0xbc, "LDY", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X),
 
-
         OpCode::new(0x85, "STA", 2, 3, AddressingMode::ZeroPage),
         OpCode::new(0x95, "STA", 2, 4, AddressingMode::ZeroPage_X),
         OpCode::new(0x8d, "STA", 3, 4, AddressingMode::Absolute),
@@ -190,10 +182,7 @@ lazy_static! {
         OpCode::new(0xba, "TSX", 1, 2, AddressingMode::NoneAddressing),
         OpCode::new(0x9a, "TXS", 1, 2, AddressingMode::NoneAddressing),
 
-
         /*End A,X,Y Registers */
-
-
         /* Control flow */
         OpCode::new(0x90, "BCC", 2, 2, AddressingMode::NoneAddressing),
         OpCode::new(0xB0, "BCS", 2, 2, AddressingMode::NoneAddressing),
@@ -209,9 +198,7 @@ lazy_static! {
         OpCode::new(0x20, "JSR", 3, 6, AddressingMode::NoneAddressing),
         OpCode::new(0x60, "RTS", 1, 6, AddressingMode::NoneAddressing),
 
-
         /* End Control flow */
-
         /*Status register */
         OpCode::new(0x18, "CLC", 1, 2, AddressingMode::NoneAddressing),
         OpCode::new(0xD8, "CLD", 1, 2, AddressingMode::NoneAddressing),
@@ -222,7 +209,6 @@ lazy_static! {
         OpCode::new(0x78, "SEI", 1, 2, AddressingMode::NoneAddressing),
 
         /*End Status register */
-
         /*Stack related */
         OpCode::new(0x48, "PHA", 1, 3, AddressingMode::NoneAddressing),
         OpCode::new(0x08, "PHP", 1, 3, AddressingMode::NoneAddressing),
@@ -230,17 +216,10 @@ lazy_static! {
         OpCode::new(0x28, "PLP", 1, 4, AddressingMode::NoneAddressing),
 
         /*End Stack related */
-
-
-
-
         /*Other*/
         OpCode::new(0xEA, "NOP", 1, 2, AddressingMode::NoneAddressing),
         OpCode::new(0x40, "RTI", 1, 6, AddressingMode::NoneAddressing),
         /*End Other*/
-
-
-
     ];
     pub static ref OPCODES_MAP:HashMap<u8,&'static OpCode> = {
         let mut map = HashMap::new();

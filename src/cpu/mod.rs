@@ -176,8 +176,13 @@ impl CPU {
     fn compare_handle(&mut self, mode: &AddressingMode, base: u8) {
         let addr = self.get_operand_address(mode);
         let data = self.mem_read(addr);
-        self.status.set(CpuFlags::CARRY, base >= data);
-        self.update_zero_and_negative_flags(base.wrapping_sub(data))
+        if data <= base {
+            self.status.insert(CpuFlags::CARRY);
+        } else {
+            self.status.remove(CpuFlags::CARRY);
+        }
+
+        self.update_zero_and_negative_flags(base.wrapping_sub(data));
     }
     fn get_operand_address(&self, mode: &AddressingMode) -> u16 {
         match mode {
@@ -229,8 +234,8 @@ impl CPU {
     }
 
     pub fn load(&mut self, program: Vec<u8>) {
-        self.memory[0x8000..(0x8000 + program.len())].copy_from_slice(&program[..]);
-        self.mem_write_u16(0xFFFC, 0x8000);
+        self.memory[0x600..(0x600 + program.len())].copy_from_slice(&program[..]);
+        self.mem_write_u16(0xFFFC, 0x600);
     }
 
     pub fn run(&mut self) {
@@ -242,7 +247,6 @@ impl CPU {
     {
         let ref opcodes: HashMap<u8, &'static opcodes::OpCode> = *opcodes::OPCODES_MAP;
         loop {
-            callback(self);
             let code = self.mem_read(self.program_counter);
             self.program_counter += 1;
 
@@ -264,6 +268,7 @@ impl CPU {
             if program_counter_state == self.program_counter {
                 self.program_counter += (opcode.len - 1) as u16;
             }
+            callback(self);
         }
     }
     pub fn reset(&mut self) {

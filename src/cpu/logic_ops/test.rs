@@ -119,7 +119,7 @@ fn test_ror() {
 fn test_sbc() {
     let mut cpu = CPU::new();
     cpu.load_and_run(vec![0xa9, 0x50, 0xe9, 0x30, 0x00]);
-    assert_eq!(cpu.register_a, 0x20);
+    assert_eq!(cpu.register_a, 0x1f);
 }
 #[test]
 fn test_sbc_carry() {
