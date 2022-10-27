@@ -78,7 +78,7 @@ impl Mem for CPU {
 }
 
 impl CPU {
-    pub fn new() -> Self {
+    pub fn new(bus: Bus) -> Self {
         CPU {
             register_a: 0,
             register_x: 0,
@@ -86,31 +86,9 @@ impl CPU {
             stack_ptr: STACK_PTR_RESET,
             status: CpuFlags::from_bits_truncate(0b100100),
             program_counter: 0,
-            bus: Bus::new(),
+            bus: bus,
         }
     }
-
-    // pub fn mem_read(&self, addr: u16) -> u8 {
-    //     self.memory[addr as usize]
-    // }
-
-    // pub fn mem_write(&mut self, addr: u16, data: u8) {
-    //     self.memory[addr as usize] = data;
-    // }
-
-    // fn mem_read_u16(&self, pos: u16) -> u16 {
-    //     let lowest = self.mem_read(pos) as u16;
-    //     let highest = self.mem_read(pos + 1) as u16;
-    //     // convert to little endian
-    //     (highest << 8) | (lowest as u16)
-    // }
-
-    // fn mem_write_u16(&mut self, pos: u16, data: u16) {
-    //     let highest = (data >> 8) as u8;
-    //     let lowest = (data & 0xff) as u8;
-    //     self.mem_write(pos, lowest);
-    //     self.mem_write(pos + 1, highest);
-    // }
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         // we set the zero flag unset
@@ -254,7 +232,7 @@ impl CPU {
 
     pub fn load(&mut self, program: Vec<u8>) {
         for i in 0..(program.len() as u16) {
-            self.mem_write(0x0600 + i, program[i as usize]);
+            self.mem_write(0x600 + i, program[i as usize]);
         }
         // self.mem_write_u16(0xFFFC, 0x0600);
     }

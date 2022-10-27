@@ -1,11 +1,14 @@
 use crate::{
+    bus::Bus,
+    cartridge::test::gen_test_rom,
     cpu::{CpuFlags, CPU},
     mem::Mem,
 };
 
 #[test]
 fn test_bcc() {
-    let mut cpu: CPU = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.load_and_run(vec![0x18, 0x90, 0x01, 0x00, 0xa9, 0x05, 0x00]);
     assert_eq!(cpu.register_a, 0x05);
 
@@ -15,7 +18,8 @@ fn test_bcc() {
 
 #[test]
 fn test_bcs() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.load_and_run(vec![0x18, 0xb0, 0x01, 0x00, 0xa9, 0x05, 0x00]);
     assert_eq!(cpu.register_a, 0x00);
 
@@ -25,7 +29,8 @@ fn test_bcs() {
 
 #[test]
 fn test_beq() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.load_and_run(vec![0xa9, 0x00, 0xf0, 0x01, 0x00, 0xa9, 0x05, 0x00]);
     assert_eq!(cpu.register_a, 0x05);
 
@@ -35,7 +40,8 @@ fn test_beq() {
 
 #[test]
 fn test_bne() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.load_and_run(vec![0xa9, 0x00, 0xd0, 0x01, 0x00, 0xa9, 0x05, 0x00]);
     assert_eq!(cpu.register_a, 0x00);
 
@@ -45,7 +51,8 @@ fn test_bne() {
 
 #[test]
 fn test_bmi() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.load_and_run(vec![0xa9, 0b1000_0000, 0x30, 0x01, 0x00, 0xa9, 0x05, 0x00]);
     assert_eq!(cpu.register_a, 0x05);
 
@@ -55,7 +62,8 @@ fn test_bmi() {
 
 #[test]
 fn test_bpl() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.load_and_run(vec![0xa9, 0b1000_0000, 0x10, 0x01, 0x00, 0xa9, 0x05, 0x00]);
     assert_eq!(cpu.register_a, 0b1000_0000);
 
@@ -65,7 +73,8 @@ fn test_bpl() {
 
 #[test]
 fn test_bvc() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.load_and_run(vec![
         0xa9, 0x06, 0x69, 0x02, 0x50, 0x01, 0x00, 0xa9, 0x05, 0x00,
     ]);
@@ -79,7 +88,8 @@ fn test_bvc() {
 
 #[test]
 fn test_bvs() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.load_and_run(vec![
         0xa9, 0x06, 0x69, 0x02, 0x70, 0x01, 0x00, 0xa9, 0x05, 0x00,
     ]);
@@ -93,7 +103,8 @@ fn test_bvs() {
 
 #[test]
 fn test_jmp() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.mem_write(0x07, 0xa9);
     cpu.mem_write(0x08, 0x05);
     cpu.mem_write(0x09, 0x00);
@@ -103,7 +114,8 @@ fn test_jmp() {
 
 #[test]
 fn test_jmp_indirect() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.mem_write(0x07, 0x09);
     cpu.mem_write(0x09, 0xa9);
     cpu.mem_write(0xA, 0x08);
@@ -114,7 +126,8 @@ fn test_jmp_indirect() {
 
 #[test]
 fn test_jsr() {
-    let mut cpu = CPU::new();
+    let bus = Bus::new(gen_test_rom());
+    let mut cpu = CPU::new(bus);
     cpu.mem_write(0x07, 0x38);
     cpu.mem_write(0x08, 0xf8);
     cpu.mem_write(0x09, 0x00);
@@ -125,7 +138,8 @@ fn test_jsr() {
 
 // #[test]
 // fn test_rts() {
-//     let mut cpu = CPU::new();
+//     let bus = Bus::new(gen_test_rom());
+// let mut cpu = CPU::new(bus);
 //     cpu.mem_write(0x08, 0x38);
 //     cpu.mem_write(0x09, 0x60);
 //     cpu.load_and_run(vec![0x20, 0x08, 0xf8, 0x00]);
