@@ -86,7 +86,7 @@ impl CPU {
             stack_ptr: STACK_PTR_RESET,
             status: CpuFlags::from_bits_truncate(0b100100),
             program_counter: 0,
-            bus: bus,
+            bus,
         }
     }
 
@@ -276,7 +276,7 @@ impl CPU {
         self.register_y = 0;
         self.status = CpuFlags::from_bits_truncate(0b100100);
         self.stack_ptr = STACK_PTR_RESET;
-        self.program_counter = 0x0600;
+        self.program_counter = self.mem_read_u16(0xFFFC);
     }
     fn load_and_run(&mut self, program: Vec<u8>) {
         self.load(program);

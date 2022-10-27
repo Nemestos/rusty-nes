@@ -35,6 +35,12 @@ lazy_static! {
 }
 
 pub fn load_and_run_snake(cpu: &mut CPU) {
+    cpu.load(SNAKE_GAME.to_vec());
+    cpu.reset();
+    run_snake(cpu);
+}
+
+pub fn run_snake(cpu: &mut CPU) {
     let sdl_ctx = sdl2::init().unwrap();
     let video_sys = sdl_ctx.video().unwrap();
     let window = video_sys
@@ -51,9 +57,6 @@ pub fn load_and_run_snake(cpu: &mut CPU) {
     let mut txt = txt_creator
         .create_texture_target(PixelFormatEnum::RGB24, 32, 32)
         .unwrap();
-
-    cpu.load(SNAKE_GAME.to_vec());
-    cpu.reset();
 
     let mut screen_state = [0 as u8; 32 * 3 * 32];
     let mut rng = rand::thread_rng();
