@@ -1,9 +1,11 @@
 use cpu::CPU;
-use games::{load_and_run_snake, snake_game};
+use games::load_and_run_snake;
 
-mod cpu;
-mod games;
-mod opcodes;
+pub mod bus;
+pub mod cpu;
+pub mod games;
+pub mod mem;
+pub mod opcodes;
 
 #[macro_use]
 extern crate lazy_static;

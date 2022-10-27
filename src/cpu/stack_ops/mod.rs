@@ -39,7 +39,7 @@ impl StackOpCodes for CPU {
 
     /*END Stack related */
 
-    fn handle_stack_ops(&mut self, opcode: &OpCode, code: u8) {
+    fn handle_stack_ops(&mut self, _opcode: &OpCode, code: u8) {
         match code {
             /*Stack related */
             0x48 => self.pha(),

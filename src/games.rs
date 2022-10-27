@@ -6,10 +6,10 @@ use sdl2::{
     EventPump,
 };
 
-use crate::cpu::CPU;
+use crate::{cpu::CPU, mem::Mem};
 
 lazy_static! {
-    pub static ref snake_game: Vec<u8> = vec![
+    pub static ref SNAKE_GAME: Vec<u8> = vec![
         0x20, 0x06, 0x06, 0x20, 0x38, 0x06, 0x20, 0x0d, 0x06, 0x20, 0x2a, 0x06, 0x60, 0xa9, 0x02,
         0x85, 0x02, 0xa9, 0x04, 0x85, 0x03, 0xa9, 0x11, 0x85, 0x10, 0xa9, 0x10, 0x85, 0x12, 0xa9,
         0x0f, 0x85, 0x14, 0xa9, 0x04, 0x85, 0x11, 0x85, 0x13, 0x85, 0x15, 0x60, 0xa5, 0xfe, 0x85,
@@ -52,7 +52,7 @@ pub fn load_and_run_snake(cpu: &mut CPU) {
         .create_texture_target(PixelFormatEnum::RGB24, 32, 32)
         .unwrap();
 
-    cpu.load(snake_game.to_vec());
+    cpu.load(SNAKE_GAME.to_vec());
     cpu.reset();
 
     let mut screen_state = [0 as u8; 32 * 3 * 32];
@@ -66,7 +66,7 @@ pub fn load_and_run_snake(cpu: &mut CPU) {
             canvas.copy(&txt, None, None).unwrap();
             canvas.present();
         }
-        ::std::thread::sleep(std::time::Duration::new(0, 70_000));
+        ::std::thread::sleep(std::time::Duration::new(0, 10_000));
     })
 }
 

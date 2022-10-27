@@ -1,6 +1,5 @@
 use crate::opcodes::OpCode;
 
-use super::CpuFlags;
 use super::CPU;
 pub mod test;
 
@@ -28,7 +27,7 @@ impl OtherOpCodes for CPU {
 
     /*END Other Flow */
 
-    fn handle_other_ops(&mut self, opcode: &OpCode, code: u8) {
+    fn handle_other_ops(&mut self, _opcode: &OpCode, code: u8) {
         match code {
             /*Other Flow */
             0xea => self.nop(),

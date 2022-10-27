@@ -1,4 +1,7 @@
-use crate::cpu::{CpuFlags, CPU};
+use crate::{
+    cpu::{CpuFlags, CPU},
+    mem::Mem,
+};
 
 /*Arithmethic & logic */
 #[test]

@@ -1,4 +1,7 @@
-use crate::cpu::{CpuFlags, CPU};
+use crate::{
+    cpu::{CpuFlags, CPU},
+    mem::Mem,
+};
 
 /*A,X,Y Registers */
 #[test]

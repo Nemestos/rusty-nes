@@ -1,7 +1,11 @@
-use crate::cpu::{CpuFlags, CPU};
+use crate::{
+    cpu::{CpuFlags, CPU},
+    mem::Mem,
+};
+
 #[test]
 fn test_bcc() {
-    let mut cpu = CPU::new();
+    let mut cpu: CPU = CPU::new();
     cpu.load_and_run(vec![0x18, 0x90, 0x01, 0x00, 0xa9, 0x05, 0x00]);
     assert_eq!(cpu.register_a, 0x05);
 

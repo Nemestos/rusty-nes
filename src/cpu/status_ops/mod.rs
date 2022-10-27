@@ -42,7 +42,7 @@ impl StatusOpCodes for CPU {
     }
     /*End Status register */
 
-    fn handle_status_ops(&mut self, opcode: &OpCode, code: u8) {
+    fn handle_status_ops(&mut self, _opcode: &OpCode, code: u8) {
         match code {
             /*Status Register */
             0x18 => self.clc(),

@@ -1,3 +1,4 @@
+use crate::mem::Mem;
 use crate::opcodes::OpCode;
 
 use super::CpuFlags;
@@ -82,7 +83,7 @@ impl ControlOpCodes for CPU {
 
     /*END Control Flow */
 
-    fn handle_control_flow_ops(&mut self, opcode: &OpCode, code: u8) {
+    fn handle_control_flow_ops(&mut self, _opcode: &OpCode, code: u8) {
         match code {
             /*Control Flow */
             0x90 => self.bcc(),

@@ -1,4 +1,5 @@
 use crate::cpu::CpuFlags;
+use crate::mem::Mem;
 use crate::opcodes::OpCode;
 
 use super::AddressingMode;

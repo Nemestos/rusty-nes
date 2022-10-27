@@ -1,9 +1,11 @@
+use crate::bus::Bus;
 use crate::cpu::control_flow_ops::ControlOpCodes;
 use crate::cpu::logic_ops::LogicOpCodes;
 use crate::cpu::register_ops::RegisterOpCodes;
 use crate::cpu::stack_ops::StackOpCodes;
 use crate::cpu::status_ops::StatusOpCodes;
 
+use crate::mem::Mem;
 use crate::opcodes;
 use std::collections::HashMap;
 
@@ -17,7 +19,6 @@ pub mod status_ops;
 
 const STACK_PTR_START: u16 = 0x0100;
 
-const STACK_PTR_END: u16 = 0x01FF;
 const STACK_PTR_RESET: u8 = 0xFD;
 
 bitflags! {
@@ -48,6 +49,7 @@ pub enum AddressingMode {
     Indirect_Y,
     NoneAddressing,
 }
+
 pub struct CPU {
     pub register_x: u8,
     pub register_a: u8,
@@ -55,7 +57,24 @@ pub struct CPU {
     pub stack_ptr: u8,
     pub status: CpuFlags,
     pub program_counter: u16,
-    memory: [u8; 0xffff],
+    pub bus: Bus,
+}
+
+impl Mem for CPU {
+    fn mem_read(&self, addr: u16) -> u8 {
+        self.bus.mem_read(addr)
+    }
+
+    fn mem_write(&mut self, addr: u16, data: u8) {
+        self.bus.mem_write(addr, data)
+    }
+    fn mem_read_u16(&self, pos: u16) -> u16 {
+        self.bus.mem_read_u16(pos)
+    }
+
+    fn mem_write_u16(&mut self, pos: u16, data: u16) {
+        self.bus.mem_write_u16(pos, data)
+    }
 }
 
 impl CPU {
@@ -67,31 +86,31 @@ impl CPU {
             stack_ptr: STACK_PTR_RESET,
             status: CpuFlags::from_bits_truncate(0b100100),
             program_counter: 0,
-            memory: [0; 0xffff],
+            bus: Bus::new(),
         }
     }
 
-    pub fn mem_read(&self, addr: u16) -> u8 {
-        self.memory[addr as usize]
-    }
+    // pub fn mem_read(&self, addr: u16) -> u8 {
+    //     self.memory[addr as usize]
+    // }
 
-    pub fn mem_write(&mut self, addr: u16, data: u8) {
-        self.memory[addr as usize] = data;
-    }
+    // pub fn mem_write(&mut self, addr: u16, data: u8) {
+    //     self.memory[addr as usize] = data;
+    // }
 
-    fn mem_read_u16(&self, pos: u16) -> u16 {
-        let lowest = self.mem_read(pos) as u16;
-        let highest = self.mem_read(pos + 1) as u16;
-        // convert to little endian
-        (highest << 8) | (lowest as u16)
-    }
+    // fn mem_read_u16(&self, pos: u16) -> u16 {
+    //     let lowest = self.mem_read(pos) as u16;
+    //     let highest = self.mem_read(pos + 1) as u16;
+    //     // convert to little endian
+    //     (highest << 8) | (lowest as u16)
+    // }
 
-    fn mem_write_u16(&mut self, pos: u16, data: u16) {
-        let highest = (data >> 8) as u8;
-        let lowest = (data & 0xff) as u8;
-        self.mem_write(pos, lowest);
-        self.mem_write(pos + 1, highest);
-    }
+    // fn mem_write_u16(&mut self, pos: u16, data: u16) {
+    //     let highest = (data >> 8) as u8;
+    //     let lowest = (data & 0xff) as u8;
+    //     self.mem_write(pos, lowest);
+    //     self.mem_write(pos + 1, highest);
+    // }
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         // we set the zero flag unset
@@ -234,11 +253,13 @@ impl CPU {
     }
 
     pub fn load(&mut self, program: Vec<u8>) {
-        self.memory[0x600..(0x600 + program.len())].copy_from_slice(&program[..]);
-        self.mem_write_u16(0xFFFC, 0x600);
+        for i in 0..(program.len() as u16) {
+            self.mem_write(0x0600 + i, program[i as usize]);
+        }
+        // self.mem_write_u16(0xFFFC, 0x0600);
     }
 
-    pub fn run(&mut self) {
+    fn run(&mut self) {
         self.run_with_cb(|_| {});
     }
     pub fn run_with_cb<F>(&mut self, mut callback: F)
@@ -274,11 +295,12 @@ impl CPU {
     pub fn reset(&mut self) {
         self.register_a = 0;
         self.register_x = 0;
+        self.register_y = 0;
         self.status = CpuFlags::from_bits_truncate(0b100100);
         self.stack_ptr = STACK_PTR_RESET;
-        self.program_counter = self.mem_read_u16(0xFFFC);
+        self.program_counter = 0x0600;
     }
-    pub fn load_and_run(&mut self, program: Vec<u8>) {
+    fn load_and_run(&mut self, program: Vec<u8>) {
         self.load(program);
         self.reset();
         self.run();
